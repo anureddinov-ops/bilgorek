@@ -783,6 +783,10 @@ body {
         <span class="lr-left"><span class="lr-icon">🎙️</span> Komanda yarışı (Bil Bakalım)</span>
         <span class="lr-arrow">›</span>
       </div>
+      <div class="link-row" id="btn-live-mode">
+        <span class="lr-left"><span class="lr-icon">🌐</span> Canlı yarış (hər öz telefonu ilə)</span>
+        <span class="lr-arrow">›</span>
+      </div>
     </div>
   </section>
 
@@ -872,6 +876,111 @@ body {
       <div class="team-result-list" id="team-result-list"></div>
       <button class="btn btn-primary btn-lg" id="btn-team-play-again">🔁 Yenidən oyna</button>
       <button class="btn btn-secondary" id="btn-team-result-home">🏠 Ana səhifə</button>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — GİRİŞ -->
+  <section id="screen-live-entry" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-entry-back">←</button>
+      <h2>Canlı yarış</h2>
+      <div style="width:42px"></div>
+    </div>
+    <p class="team-setup-hint">Hər komanda öz telefonundan qoşulur. Eyni sual eyni anda hamıya gəlir — kim daha tez və düzgün cavab versə, daha çox xal qazanır! 🌐</p>
+    <button class="btn btn-primary btn-lg" id="btn-live-host">🎬 Otaq yarat (Aparıcı)</button>
+    <button class="btn btn-secondary" id="btn-live-join-open">🔑 Otağa qoşul (Kodla)</button>
+  </section>
+
+  <!-- CANLI YARIŞ — APARICI QURULUŞU -->
+  <section id="screen-live-host-setup" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-host-setup-back">←</button>
+      <h2>Otaq yarat</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="section-title">📚 Kateqoriya</div>
+    <select id="live-host-category-select" class="team-select"></select>
+    <button class="btn btn-primary btn-lg" id="btn-live-host-create" style="margin-top:22px;">🏁 Otaq yarat</button>
+  </section>
+
+  <!-- CANLI YARIŞ — OTAĞA QOŞUL -->
+  <section id="screen-live-join" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-join-back">←</button>
+      <h2>Otağa qoşul</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="name-field">
+      <label>Otaq kodu</label>
+      <input type="text" id="live-join-code" maxlength="4" inputmode="numeric" placeholder="Məs: 4821">
+    </div>
+    <div class="name-field">
+      <label>Komandanızın adı</label>
+      <input type="text" id="live-join-team-name" maxlength="18" placeholder="Məs: Qırmızılar">
+    </div>
+    <div id="live-join-error" style="color:var(--danger); font-size:12.5px; min-height:16px; margin-bottom:10px;"></div>
+    <button class="btn btn-primary btn-lg" id="btn-live-join-submit">🔑 Qoşul</button>
+  </section>
+
+  <!-- CANLI YARIŞ — GÖZLƏMƏ OTAĞI -->
+  <section id="screen-live-lobby" class="screen">
+    <div class="team-turn-wrap">
+      <p class="team-turn-label">Otaq kodu</p>
+      <h1 class="team-turn-name" id="live-lobby-code">0000</h1>
+      <p class="team-turn-hint" id="live-lobby-hint">Bu kodu digər komandalara söylə.</p>
+      <div class="team-status-strip" id="live-lobby-teams"></div>
+      <button class="btn btn-primary btn-lg" id="btn-live-lobby-start" style="display:none;">▶️ Yarışa başla</button>
+      <p class="team-turn-hint" id="live-lobby-wait-msg" style="display:none;">Aparıcının başlamasını gözləyin...</p>
+      <button class="btn btn-secondary" id="btn-live-lobby-leave">✕ Çıx</button>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — SUAL (KOMANDA TƏRƏFİ) -->
+  <section id="screen-live-question" class="screen">
+    <div class="game-header">
+      <span class="game-player" id="live-q-counter"></span>
+      <div class="timer-pill" id="live-timer-pill">20</div>
+    </div>
+    <div class="question-card">
+      <div class="question-meta"><span id="live-q-category-icon"></span></div>
+      <h2 id="live-question-text">...</h2>
+    </div>
+    <div class="options-grid" id="live-options-grid"></div>
+  </section>
+
+  <!-- CANLI YARIŞ — CAVAB VERİLDİ, GÖZLƏMƏ -->
+  <section id="screen-live-waiting" class="screen">
+    <div class="team-turn-wrap">
+      <div class="team-turn-icon" id="live-waiting-icon">✅</div>
+      <p class="team-turn-label" id="live-waiting-label">Cavabın qeydə alındı</p>
+      <div class="team-status-strip" id="live-waiting-scoreboard"></div>
+      <p class="team-turn-hint">Aparıcı növbəti suala keçəndə davam edəcək...</p>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — APARICI İDARƏETMƏ EKRANI -->
+  <section id="screen-live-host-control" class="screen">
+    <div class="sub-topbar">
+      <div style="width:42px"></div>
+      <h2 id="live-host-q-counter">Sual 1/10</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="question-card">
+      <div class="question-meta"><span id="live-host-q-category-icon"></span></div>
+      <h2 id="live-host-question-text">...</h2>
+    </div>
+    <p class="team-turn-hint" id="live-host-answer-count">0/0 komanda cavab verdi</p>
+    <div class="team-status-strip" id="live-host-scoreboard"></div>
+    <button class="btn btn-primary btn-lg" id="btn-live-host-next">➡️ Növbəti sual</button>
+  </section>
+
+  <!-- CANLI YARIŞ — NƏTİCƏ -->
+  <section id="screen-live-result" class="screen">
+    <div class="result-content">
+      <div class="result-emoji">🏆</div>
+      <h1>Canlı yarış bitdi!</h1>
+      <div class="team-result-list" id="live-result-list"></div>
+      <button class="btn btn-secondary" id="btn-live-result-home">🏠 Ana səhifə</button>
     </div>
   </section>
 
@@ -1237,6 +1346,9 @@ body {
 <!-- BilGörək — Paylaşılan Məlumat Bazası Qatı (ayrı fayl: db.js) -->
 <script src="db.js"></script>
 
+<!-- BilGörək — Canlı Otaq (Live Rooms) əlavəsi: db.js-i dəyişmədən onun üzərinə yeni funksiyalar əlavə edir -->
+<script src="liverooms.js"></script>
+
 <!-- SheetJS (xlsx) kitabxanası — admin panelinin idxal funksiyası üçün (ayrı fayl) -->
 <script src="xlsx.full.min.js"></script>
 <script>
@@ -1452,7 +1564,15 @@ const screens = {
   "team-setup": document.getElementById("screen-team-setup"),
   "team-turn": document.getElementById("screen-team-turn"),
   "team-game": document.getElementById("screen-team-game"),
-  "team-result": document.getElementById("screen-team-result")
+  "team-result": document.getElementById("screen-team-result"),
+  "live-entry": document.getElementById("screen-live-entry"),
+  "live-host-setup": document.getElementById("screen-live-host-setup"),
+  "live-join": document.getElementById("screen-live-join"),
+  "live-lobby": document.getElementById("screen-live-lobby"),
+  "live-question": document.getElementById("screen-live-question"),
+  "live-waiting": document.getElementById("screen-live-waiting"),
+  "live-host-control": document.getElementById("screen-live-host-control"),
+  "live-result": document.getElementById("screen-live-result")
 };
 
 function showScreen(name) {
@@ -2198,6 +2318,348 @@ if (teamEl.playAgainBtn) teamEl.playAgainBtn.addEventListener("click", () => {
   startTeamGame(names, teamState.categoryKey);
 });
 if (teamEl.resultHomeBtn) teamEl.resultHomeBtn.addEventListener("click", () => { soundClick(); showScreen("home"); });
+
+/* ======================= CANLI YARIŞ (HƏR KƏS ÖZ TELEFONU İLƏ) ======================= */
+let liveState = null;
+let liveTimerInterval = null;
+
+function renderLiveTeamChips(container, teams) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!teams || teams.length === 0) {
+    container.innerHTML = `<span class="team-chip">Hələ heç kim qoşulmayıb...</span>`;
+    return;
+  }
+  teams.forEach(t => {
+    const chip = document.createElement("span");
+    chip.className = "team-chip active";
+    chip.textContent = `${t.name} · ${t.score || 0}`;
+    container.appendChild(chip);
+  });
+}
+
+function liveTeamsUpdated(teams) {
+  liveState.teams = teams.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  renderLiveTeamChips(document.getElementById("live-lobby-teams"), liveState.teams);
+  renderLiveTeamChips(document.getElementById("live-waiting-scoreboard"), liveState.teams);
+  renderLiveTeamChips(document.getElementById("live-host-scoreboard"), liveState.teams);
+  const hostAnswerCountEl = document.getElementById("live-host-answer-count");
+  if (hostAnswerCountEl && screens["live-host-control"].classList.contains("active")) {
+    // xal siyahısı yenilənəndə komanda sayı da dəyişə bilər — sadəcə saxlayır
+  }
+}
+
+const btnLiveModeEl = document.getElementById("btn-live-mode");
+if (btnLiveModeEl) btnLiveModeEl.addEventListener("click", () => {
+  soundClick();
+  if (BilGorekDB.getBackendName && BilGorekDB.getBackendName() !== "firestore") {
+    showToast("Canlı yarış üçün bu telefon serverə (Firebase) qoşulu olmalıdır. Admin paneldən qoşula bilərsiniz.");
+    return;
+  }
+  showScreen("live-entry");
+});
+document.getElementById("btn-live-entry-back").addEventListener("click", () => { soundClick(); showScreen("home"); });
+document.getElementById("btn-live-host-setup-back").addEventListener("click", () => { soundClick(); showScreen("live-entry"); });
+document.getElementById("btn-live-join-back").addEventListener("click", () => { soundClick(); showScreen("live-entry"); });
+
+document.getElementById("btn-live-host").addEventListener("click", async () => {
+  soundClick();
+  const cats = categoriesCache.length ? categoriesCache : await refreshCategoriesCache();
+  const sel = document.getElementById("live-host-category-select");
+  sel.innerHTML = `<option value="mixed">🎲 Qarışıq (bütün kateqoriyalar)</option>` +
+    cats.map(c => `<option value="${escapeHtml(c.key)}">${c.icon} ${escapeHtml(c.name)}</option>`).join("");
+  showScreen("live-host-setup");
+});
+
+document.getElementById("btn-live-host-create").addEventListener("click", async () => {
+  soundClick();
+  const categoryKey = document.getElementById("live-host-category-select").value || "mixed";
+  const catsByKey = categoriesByKeyCache;
+  const gameParams = await BilGorekDB.getGameParams().catch(() => FALLBACK_GAME_PARAMS);
+
+  let rows, roundCategoryName;
+  if (categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+    roundCategoryName = "Qarışıq";
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(categoryKey);
+    roundCategoryName = (catsByKey[categoryKey] && catsByKey[categoryKey].name) || categoryKey;
+  }
+  if (!rows || rows.length === 0) { showToast("Bu kateqoriyada hazırda aktiv sual yoxdur."); return; }
+
+  const pool = rows.map(r => BilGorekDB.rowToGameQuestion(r, catsByKey));
+  const questionsPerRound = gameParams.questionsPerRound || FALLBACK_GAME_PARAMS.questionsPerRound;
+  const chosen = shuffle(pool).slice(0, Math.min(questionsPerRound, pool.length));
+  const questionIds = chosen.map(q => q.id);
+
+  let code;
+  try {
+    code = await BilGorekDB.createLiveRoom({
+      categoryKey: categoryKey, categoryName: roundCategoryName, questionIds: questionIds,
+      timePerQuestion: gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion
+    });
+  } catch (e) {
+    showToast("Otaq yaradıla bilmədi: " + (e && e.message ? e.message : e));
+    return;
+  }
+
+  const questionsById = {};
+  chosen.forEach(q => { questionsById[q.id] = q; });
+
+  liveState = {
+    role: "host", code: code, teamId: null,
+    categoryKey: categoryKey, categoryName: roundCategoryName,
+    questionIds: questionIds, questionsById: questionsById,
+    teams: [], room: null, currentIndex: -1, renderedIndex: -1,
+    gameParams: gameParams,
+    unsubRoom: null, unsubTeams: null, unsubAnswers: null
+  };
+
+  enterLiveLobby();
+});
+
+document.getElementById("btn-live-join-open").addEventListener("click", () => {
+  soundClick();
+  document.getElementById("live-join-code").value = "";
+  document.getElementById("live-join-team-name").value = "";
+  document.getElementById("live-join-error").textContent = "";
+  showScreen("live-join");
+});
+
+document.getElementById("btn-live-join-submit").addEventListener("click", async () => {
+  soundClick();
+  const errBox = document.getElementById("live-join-error");
+  errBox.textContent = "";
+  const code = document.getElementById("live-join-code").value.trim();
+  const teamName = document.getElementById("live-join-team-name").value.trim();
+  if (!/^[0-9]{4}$/.test(code)) { errBox.textContent = "Otaq kodu 4 rəqəmdən ibarət olmalıdır."; return; }
+  if (!teamName) { errBox.textContent = "Komandanın adını yaz."; return; }
+
+  let joinResult;
+  try {
+    joinResult = await BilGorekDB.joinLiveRoom(code, teamName);
+  } catch (e) {
+    errBox.textContent = (e && e.message) ? e.message : "Qoşulmaq mümkün olmadı.";
+    return;
+  }
+
+  const room = joinResult.room;
+  await refreshCategoriesCache();
+  const byKey = categoriesByKeyCache;
+
+  let rows;
+  if (room.categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(room.categoryKey);
+  }
+  const questionsById = {};
+  rows.forEach(r => {
+    const q = BilGorekDB.rowToGameQuestion(r, byKey);
+    questionsById[q.id] = q;
+  });
+
+  liveState = {
+    role: "guest", code: code, teamId: joinResult.teamId,
+    categoryKey: room.categoryKey, categoryName: room.categoryName,
+    questionIds: room.questionIds || [], questionsById: questionsById,
+    teams: [], room: room, currentIndex: -1, renderedIndex: -1,
+    gameParams: { timePerQuestion: room.timePerQuestion || 20 },
+    unsubRoom: null, unsubTeams: null, unsubAnswers: null
+  };
+
+  enterLiveLobby();
+});
+
+function enterLiveLobby() {
+  document.getElementById("live-lobby-code").textContent = liveState.code;
+  const startBtn = document.getElementById("btn-live-lobby-start");
+  const waitMsg = document.getElementById("live-lobby-wait-msg");
+  const hint = document.getElementById("live-lobby-hint");
+  if (liveState.role === "host") {
+    startBtn.style.display = "";
+    waitMsg.style.display = "none";
+    hint.textContent = "Bu kodu digər komandalara söylə — onlar \"Otağa qoşul\"dan daxil etsin.";
+  } else {
+    startBtn.style.display = "none";
+    waitMsg.style.display = "";
+    hint.textContent = "Aparıcı bu kodla otaq yaradıb — indi digər komandaları gözləyirsiniz.";
+  }
+
+  if (liveState.unsubTeams) liveState.unsubTeams();
+  liveState.unsubTeams = BilGorekDB.subscribeLiveTeams(liveState.code, liveTeamsUpdated);
+
+  if (liveState.unsubRoom) liveState.unsubRoom();
+  liveState.unsubRoom = BilGorekDB.subscribeLiveRoom(liveState.code, (room) => {
+    if (!room) return;
+    liveState.room = room;
+    if (room.status === "playing" && liveState.role === "guest") {
+      if (liveState.renderedIndex !== room.currentIndex) {
+        liveState.renderedIndex = room.currentIndex;
+        enterLiveQuestionForCurrentIndex();
+      }
+    } else if (room.status === "finished") {
+      enterLiveResult();
+    }
+  });
+
+  showScreen("live-lobby");
+}
+
+document.getElementById("btn-live-lobby-start").addEventListener("click", async () => {
+  soundClick();
+  if (!liveState.teams || liveState.teams.length < 1) { showToast("Ən azı 1 komanda qoşulmalıdır."); return; }
+  try {
+    await BilGorekDB.startLiveRoomQuestion(liveState.code, 0);
+  } catch (e) { showToast("Başlamaq mümkün olmadı."); return; }
+  enterLiveHostControlForCurrentIndex(0);
+});
+
+document.getElementById("btn-live-lobby-leave").addEventListener("click", () => { soundClick(); leaveLiveRoom(); });
+document.getElementById("btn-live-result-home").addEventListener("click", () => { soundClick(); leaveLiveRoom(); });
+
+function leaveLiveRoom() {
+  if (liveState) {
+    if (liveState.unsubRoom) liveState.unsubRoom();
+    if (liveState.unsubTeams) liveState.unsubTeams();
+    if (liveState.unsubAnswers) liveState.unsubAnswers();
+  }
+  clearInterval(liveTimerInterval);
+  liveState = null;
+  showScreen("home");
+}
+
+function enterLiveQuestionForCurrentIndex() {
+  const idx = liveState.room.currentIndex;
+  const qid = liveState.questionIds[idx];
+  const q = liveState.questionsById[qid];
+  if (!q) { showToast("Sual tapılmadı — internet bağlantısını yoxlayın."); return; }
+  liveState.currentQuestion = q;
+  liveState.currentIndex = idx;
+  liveState.answered = false;
+
+  document.getElementById("live-q-counter").textContent = `Sual ${idx + 1}/${liveState.questionIds.length}`;
+  document.getElementById("live-q-category-icon").textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  document.getElementById("live-question-text").textContent = q.q;
+
+  const letters = ["A", "B", "C", "D"];
+  const shuffledOptions = shuffle(q.options.map((text, i) => ({ text, isCorrect: i === q.correct })));
+  const grid = document.getElementById("live-options-grid");
+  grid.innerHTML = "";
+  shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.dataset.correct = opt.isCorrect ? "true" : "false";
+    btn.innerHTML = `<span class="opt-letter"><span>${letters[i]}</span></span><span>${escapeHtml(opt.text)}</span>`;
+    btn.addEventListener("click", () => handleLiveAnswer(btn, opt.isCorrect));
+    grid.appendChild(btn);
+  });
+
+  showScreen("live-question");
+  startLiveTimer();
+}
+
+function startLiveTimer() {
+  clearInterval(liveTimerInterval);
+  const timePerQuestion = (liveState.room && liveState.room.timePerQuestion) || 20;
+  let remaining = timePerQuestion;
+  const pill = document.getElementById("live-timer-pill");
+  pill.textContent = remaining;
+  pill.classList.remove("urgent");
+  liveTimerInterval = setInterval(() => {
+    remaining -= 1;
+    pill.textContent = Math.max(0, remaining);
+    if (remaining <= 5) pill.classList.add("urgent");
+    if (remaining <= 0) {
+      clearInterval(liveTimerInterval);
+      if (!liveState.answered) handleLiveAnswer(null, false);
+    }
+  }, 1000);
+}
+
+async function handleLiveAnswer(btn, isCorrect) {
+  if (liveState.answered) return;
+  liveState.answered = true;
+  clearInterval(liveTimerInterval);
+
+  const grid = document.getElementById("live-options-grid");
+  const buttons = Array.from(grid.children);
+  buttons.forEach(b => {
+    b.classList.add("disabled");
+    if (b.dataset.correct === "true") b.classList.add("correct");
+  });
+  if (btn && !isCorrect) btn.classList.add("wrong");
+  if (isCorrect) soundCorrect(); else soundWrong();
+
+  const optionIndex = btn ? buttons.indexOf(btn) : -1;
+  try {
+    await BilGorekDB.submitLiveAnswer(liveState.code, liveState.teamId, liveState.currentIndex, optionIndex, !!isCorrect);
+  } catch (e) { /* səssiz keç — cavab ötürülmədi, amma lokal olaraq göstərilib */ }
+
+  setTimeout(() => enterLiveWaiting(isCorrect), 1200);
+}
+
+function enterLiveWaiting(wasCorrect) {
+  document.getElementById("live-waiting-icon").textContent = wasCorrect ? "✅" : "❌";
+  document.getElementById("live-waiting-label").textContent = wasCorrect ? "Düzgün! Digərlərini gözləyirik..." : "Səhv oldu. Digərlərini gözləyirik...";
+  renderLiveTeamChips(document.getElementById("live-waiting-scoreboard"), liveState.teams);
+  showScreen("live-waiting");
+}
+
+function enterLiveHostControlForCurrentIndex(idx) {
+  const qid = liveState.questionIds[idx];
+  const q = liveState.questionsById[qid];
+  liveState.currentIndex = idx;
+  liveState.currentQuestion = q;
+
+  document.getElementById("live-host-q-counter").textContent = `Sual ${idx + 1}/${liveState.questionIds.length}`;
+  document.getElementById("live-host-q-category-icon").textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  document.getElementById("live-host-question-text").textContent = q.q;
+  document.getElementById("live-host-answer-count").textContent = `0/${liveState.teams.length} komanda cavab verdi`;
+
+  if (liveState.unsubAnswers) liveState.unsubAnswers();
+  liveState.unsubAnswers = BilGorekDB.subscribeLiveAnswers(liveState.code, idx, (answers) => {
+    document.getElementById("live-host-answer-count").textContent = `${answers.length}/${liveState.teams.length} komanda cavab verdi`;
+  });
+
+  showScreen("live-host-control");
+}
+
+document.getElementById("btn-live-host-next").addEventListener("click", async () => {
+  soundClick();
+  const nextBtn = document.getElementById("btn-live-host-next");
+  nextBtn.disabled = true;
+  try {
+    await BilGorekDB.scoreLiveRoomQuestion(liveState.code, liveState.currentIndex);
+  } catch (e) { /* göz ardı et */ }
+
+  const nextIdx = liveState.currentIndex + 1;
+  if (nextIdx >= liveState.questionIds.length) {
+    try { await BilGorekDB.finishLiveRoom(liveState.code); } catch (e) {}
+    enterLiveResult();
+  } else {
+    try {
+      await BilGorekDB.startLiveRoomQuestion(liveState.code, nextIdx);
+    } catch (e) { showToast("Xəta baş verdi."); nextBtn.disabled = false; return; }
+    enterLiveHostControlForCurrentIndex(nextIdx);
+  }
+  nextBtn.disabled = false;
+});
+
+function enterLiveResult() {
+  clearInterval(liveTimerInterval);
+  const sorted = (liveState.teams || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const list = document.getElementById("live-result-list");
+  list.innerHTML = "";
+  sorted.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "team-result-row" + (i === 0 ? " winner" : "");
+    row.innerHTML = `<div class="team-result-rank">${i + 1}</div><div class="team-result-name">${escapeHtml(t.name)} · ${t.score || 0} xal</div>`;
+    list.appendChild(row);
+  });
+  soundFanfare(true);
+  showScreen("live-result");
+}
 
 /* ======================= İLKİN YÜKLƏMƏ ======================= */
 updateSoundIcon();
