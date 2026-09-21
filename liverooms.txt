@@ -1,0 +1,161 @@
+/* =====================================================================
+   BilGörək — Canlı Otaq (Live Rooms) əlavəsi
+   Bu fayl db.js-i DƏYİŞMİR — onun üzərinə (BilGorekDB obyektinə) yeni
+   funksiyalar əlavə edir. Ayrı fayl olmasının səbəbi: db.js artıq böyük
+   fayldır (min bir sual bankı daxil), onu hər dəfə tam yenidən yükləmək
+   mobil brauzerlərdə etibarsız ola bilər — bu kiçik fayl isə tez yüklənir.
+   db.js-dən SONRA, oyun skriptindən ƏVVƏL yüklənməlidir:
+   <script src="db.js"></script>
+   <script src="liverooms.js"></script>
+   ===================================================================== */
+(function () {
+  "use strict";
+
+  /* ======================= CANLI OTAQ (HƏR KƏS ÖZ TELEFONU İLƏ) =======================
+     Bu, yuxarıdakı IndexedDB-oxşar "store" abstraksiyasından fərqli olaraq,
+     birbaşa Firestore-a (canlı, real-vaxt) yazır/oxuyur — çünki otaq vəziyyəti
+     (kim qoşulub, sıra kimdədir, xallar) bütün cihazlarda EYNİ ANDA görünməlidir.
+     Yalnız backend "firestore" olanda (yəni bu cihaz serverə qoşulubsa) işləyir. */
+  const LIVE_ROOMS_COLLECTION = "bilgorek_liveRooms";
+
+  function getFirestoreRaw() {
+    if (BilGorekDB.getBackendName() !== "firestore") return null;
+    try { return firebase.firestore(); } catch (e) { return null; }
+  }
+
+  function requireFirestoreRaw() {
+    const fs = getFirestoreRaw();
+    if (!fs) throw new Error("Bu cihaz serverə (Firebase) qoşulu deyil — canlı otaq üçün bütün telefonlar serverə qoşulu olmalıdır.");
+    return fs;
+  }
+
+  async function createLiveRoom({ categoryKey, categoryName, questionIds, timePerQuestion }) {
+    const fs = requireFirestoreRaw();
+    let code = null;
+    for (let attempt = 0; attempt < 10 && !code; attempt++) {
+      const candidate = String(Math.floor(1000 + Math.random() * 9000));
+      const existing = await fs.collection(LIVE_ROOMS_COLLECTION).doc(candidate).get();
+      if (!existing.exists) code = candidate;
+    }
+    if (!code) throw new Error("Otaq kodu yaradıla bilmədi, bir də cəhd edin.");
+    await fs.collection(LIVE_ROOMS_COLLECTION).doc(code).set({
+      code: code,
+      categoryKey: categoryKey,
+      categoryName: categoryName,
+      questionIds: questionIds,
+      timePerQuestion: timePerQuestion || 20,
+      status: "waiting",
+      currentIndex: -1,
+      questionStartedAt: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return code;
+  }
+
+  async function joinLiveRoom(code, teamName) {
+    const fs = requireFirestoreRaw();
+    const roomRef = fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code));
+    const snap = await roomRef.get();
+    if (!snap.exists) throw new Error("Bu kodla otaq tapılmadı.");
+    const data = snap.data();
+    if (data.status !== "waiting") throw new Error("Bu yarış artıq başlayıb, qoşula bilməzsiniz.");
+    const teamRef = await roomRef.collection("teams").add({
+      name: teamName,
+      score: 0,
+      joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return { teamId: teamRef.id, room: Object.assign({ code: String(code) }, data) };
+  }
+
+  function subscribeLiveRoom(code, cb) {
+    const fs = getFirestoreRaw();
+    if (!fs) { cb(null); return () => {}; }
+    return fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).onSnapshot(
+      snap => cb(snap.exists ? Object.assign({ code: String(code) }, snap.data()) : null),
+      () => cb(null)
+    );
+  }
+
+  function subscribeLiveTeams(code, cb) {
+    const fs = getFirestoreRaw();
+    if (!fs) { cb([]); return () => {}; }
+    return fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).collection("teams").onSnapshot(
+      snap => {
+        const teams = [];
+        snap.forEach(d => teams.push(Object.assign({ id: d.id }, d.data())));
+        cb(teams);
+      },
+      () => cb([])
+    );
+  }
+
+  function subscribeLiveAnswers(code, questionIndex, cb) {
+    const fs = getFirestoreRaw();
+    if (!fs) { cb([]); return () => {}; }
+    return fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).collection("answers")
+      .where("questionIndex", "==", questionIndex)
+      .onSnapshot(
+        snap => {
+          const answers = [];
+          snap.forEach(d => answers.push(Object.assign({ id: d.id }, d.data())));
+          cb(answers);
+        },
+        () => cb([])
+      );
+  }
+
+  async function submitLiveAnswer(code, teamId, questionIndex, optionIndex, correct) {
+    const fs = requireFirestoreRaw();
+    const docId = questionIndex + "_" + teamId;
+    await fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).collection("answers").doc(docId).set({
+      teamId: teamId,
+      questionIndex: questionIndex,
+      optionIndex: optionIndex,
+      correct: !!correct,
+      answeredAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  async function startLiveRoomQuestion(code, index) {
+    const fs = requireFirestoreRaw();
+    await fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).update({
+      status: "playing",
+      currentIndex: index,
+      questionStartedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  async function scoreLiveRoomQuestion(code, questionIndex) {
+    const fs = requireFirestoreRaw();
+    const roomRef = fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code));
+    const answersSnap = await roomRef.collection("answers").where("questionIndex", "==", questionIndex).get();
+    const answers = [];
+    answersSnap.forEach(d => answers.push(d.data()));
+    const correctAnswers = answers.filter(a => a.correct && a.answeredAt).sort((a, b) => {
+      const at = (a.answeredAt && a.answeredAt.toMillis) ? a.answeredAt.toMillis() : 0;
+      const bt = (b.answeredAt && b.answeredAt.toMillis) ? b.answeredAt.toMillis() : 0;
+      return at - bt;
+    });
+    const bonusByRank = [50, 30, 15];
+    if (correctAnswers.length > 0) {
+      const batch = fs.batch();
+      correctAnswers.forEach((a, i) => {
+        const points = 100 + (bonusByRank[i] || 0);
+        batch.update(roomRef.collection("teams").doc(a.teamId), { score: firebase.firestore.FieldValue.increment(points) });
+      });
+      await batch.commit();
+    }
+    return { answeredCount: answers.length, correctCount: correctAnswers.length };
+  }
+
+  async function finishLiveRoom(code) {
+    const fs = requireFirestoreRaw();
+    await fs.collection(LIVE_ROOMS_COLLECTION).doc(String(code)).update({ status: "finished" });
+  }
+
+
+  Object.assign(BilGorekDB, {
+    createLiveRoom, joinLiveRoom, subscribeLiveRoom, subscribeLiveTeams, subscribeLiveAnswers,
+    submitLiveAnswer, startLiveRoomQuestion, scoreLiveRoomQuestion, finishLiveRoom
+  });
+})();
