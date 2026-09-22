@@ -1,0 +1,17 @@
+{
+  "name": "BilGörək — Bilik Yarışı",
+  "short_name": "BilGörək",
+  "description": "I-IV sinif şagirdləri üçün tədris proqramına uyğun bilik yarışı — 12 kateqoriya, 3600+ sual.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a2e",
+  "theme_color": "#1c0f45",
+  "lang": "az",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
