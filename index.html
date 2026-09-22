@@ -1,0 +1,2849 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>BilGörək — Bilik Yarışı</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c0f45">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  --bg-deep: #060314;
+  --bg-navy: #0a0a2e;
+  --bg-purple: #1c0f45;
+  --card: #150f3d;
+  --card-2: #1f1856;
+  --line: rgba(160, 130, 255, 0.25);
+  --text: #f6f3ff;
+  --text-dim: #ab9fd9;
+  --gold: #ffd76a;
+  --gold-2: #ffb92e;
+  --gold-deep: #a3690a;
+  --purple: #8b5cf6;
+  --purple-2: #b39bfa;
+  --success: #29e0a8;
+  --danger: #ff4b6e;
+  --radius: 18px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-deep);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.stage-rays {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -8%, rgba(139, 92, 246, 0.45), transparent 60%),
+    radial-gradient(ellipse 80% 55% at 15% 15%, rgba(70, 90, 255, 0.35), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 100%, rgba(120, 40, 200, 0.35), transparent 60%),
+    conic-gradient(from 0deg at 50% 15%,
+      rgba(255,255,255,0.045) 0deg, transparent 12deg,
+      rgba(255,255,255,0.045) 20deg, transparent 34deg,
+      rgba(255,255,255,0.045) 42deg, transparent 56deg,
+      rgba(255,255,255,0.045) 64deg, transparent 78deg,
+      rgba(255,255,255,0.045) 86deg, transparent 100deg,
+      rgba(255,255,255,0.045) 108deg, transparent 122deg,
+      rgba(255,255,255,0.045) 130deg, transparent 144deg,
+      rgba(255,255,255,0.045) 152deg, transparent 166deg,
+      rgba(255,255,255,0.045) 174deg, transparent 188deg,
+      rgba(255,255,255,0.045) 196deg, transparent 210deg,
+      rgba(255,255,255,0.045) 218deg, transparent 232deg,
+      rgba(255,255,255,0.045) 240deg, transparent 254deg,
+      rgba(255,255,255,0.045) 262deg, transparent 276deg,
+      rgba(255,255,255,0.045) 284deg, transparent 298deg,
+      rgba(255,255,255,0.045) 306deg, transparent 320deg,
+      rgba(255,255,255,0.045) 328deg, transparent 342deg,
+      rgba(255,255,255,0.045) 350deg, transparent 360deg),
+    linear-gradient(180deg, var(--bg-navy) 0%, var(--bg-purple) 50%, var(--bg-deep) 100%);
+  animation: rayRotate 46s linear infinite;
+  transform-origin: 50% 15%;
+  will-change: transform;
+}
+@keyframes rayRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+#app {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  padding: max(env(safe-area-inset-top), 18px) 20px calc(max(env(safe-area-inset-bottom), 18px) + 14px);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.screen { display: none; flex-direction: column; flex: 1; animation: fadeIn 0.25s ease; }
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- TOP BAR (persistent) ---------- */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.top-bar .tb-title {
+  font-weight: 800;
+  color: var(--gold);
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  visibility: hidden;
+}
+.top-bar.show-title .tb-title { visibility: visible; }
+
+.icon-btn {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+  color: var(--gold);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn.sound-off { color: var(--text-dim); }
+
+/* ---------- HOME ---------- */
+.brand { text-align: center; margin-top: 2vh; margin-bottom: 18px; }
+.brand-logo {
+  font-size: 54px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 18px rgba(255, 215, 106, 0.6));
+  animation: glowPulse 2.6s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 215, 106, 0.4)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 24px rgba(255, 215, 106, 0.85)); transform: scale(1.05); }
+}
+.brand h1 {
+  font-size: 30px;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #fff6da 0%, var(--gold) 45%, var(--gold-2) 65%, var(--gold-deep) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.subtitle { color: var(--text-dim); margin: 0; font-size: 13.5px; letter-spacing: 0.3px; }
+
+.name-field {
+  margin: 18px 0 14px;
+}
+.name-field label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--purple-2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.name-field input {
+  width: 100%;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.name-field input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,215,106,0.12); }
+.name-field input.shake { animation: shake 0.4s ease; border-color: var(--danger); }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 17px 20px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(180deg, #3a1e99 0%, #1a1166 55%, #120b48 100%);
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  box-shadow: 0 0 0 3px rgba(255,215,106,0.1), 0 10px 26px rgba(30, 10, 90, 0.55), inset 0 1px 0 rgba(255,255,255,0.12);
+  text-shadow: 0 0 12px rgba(255,215,106,0.5);
+}
+.btn-secondary {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  color: var(--text);
+  border: 1px solid var(--line);
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-lg { padding: 19px; font-size: 17px; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--purple-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 22px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+/* ---------- CATEGORY GRID ---------- */
+.category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.category-card {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border-radius: var(--radius);
+  padding: 18px 12px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.category-card:active { transform: scale(0.96); border-color: var(--gold); }
+.category-card .cat-icon { font-size: 28px; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 10px rgba(255,215,106,0.3)); }
+.category-card .cat-name { font-weight: 700; font-size: 13px; color: var(--text); line-height: 1.3; }
+
+/* ---------- BOTTOM NAV BUTTONS ON HOME ---------- */
+.home-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.link-row:active { transform: scale(0.98); border-color: var(--gold); }
+.link-row .lr-left { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14.5px; }
+.link-row .lr-icon { font-size: 20px; }
+.link-row .lr-arrow { color: var(--gold); font-size: 16px; }
+
+/* ---------- GAME SCREEN ---------- */
+.game-header { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 12px; gap: 10px; }
+.game-player {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.timer-pill {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1.5px solid var(--gold-deep);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--gold);
+  min-width: 46px;
+  text-align: center;
+}
+.timer-pill.urgent { border-color: var(--danger); color: var(--danger); animation: timerBlink 0.5s ease-in-out infinite; }
+@keyframes timerBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.score-mini {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold);
+  border: 1px solid var(--gold-deep);
+}
+
+.progress-bar-wrap { height: 6px; background: var(--card); border-radius: 999px; overflow: hidden; margin-bottom: 18px; border: 1px solid var(--line); }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--purple), var(--gold)); width: 10%; transition: width 0.3s ease; }
+
+.question-card {
+  background:
+    radial-gradient(ellipse 140% 100% at 50% -20%, rgba(139, 92, 246, 0.35), transparent 60%),
+    linear-gradient(180deg, var(--card-2), var(--card));
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  margin-bottom: 20px;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1.5px solid var(--gold-deep);
+  box-shadow: 0 0 0 1px rgba(255,215,106,0.06) inset, 0 12px 30px rgba(3, 8, 35, 0.55);
+}
+.question-meta { display: flex; justify-content: space-between; color: var(--gold); font-size: 12px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.9; }
+.question-card h2 { margin: 0; font-size: 19px; line-height: 1.45; font-weight: 700; color: var(--text); }
+
+.hint-btn {
+  background: transparent;
+  border: 1px dashed var(--purple-2);
+  color: var(--purple-2);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  align-self: flex-start;
+  margin-bottom: 12px;
+}
+.hint-btn:active { transform: scale(0.97); }
+.hint-box, .explanation-box {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.explanation-box { border-color: var(--gold-deep); color: var(--text); margin-top: 14px; margin-bottom: 0; }
+
+.loading-msg { grid-column: 1 / -1; text-align: center; color: var(--text-dim); padding: 30px 10px; font-size: 14px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--gold-deep);
+  color: var(--gold);
+  padding: 13px 20px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 50;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.options-grid { display: flex; flex-direction: column; gap: 12px; }
+.option-btn {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 14px 20px 14px 14px;
+  text-align: left;
+  font-size: 15px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.option-btn .opt-letter {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: linear-gradient(180deg, #2a1a7a, #150b48);
+  border: 1px solid var(--gold-deep);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--gold);
+  flex-shrink: 0; transform: rotate(45deg);
+}
+.option-btn .opt-letter span { transform: rotate(-45deg); display: block; }
+.option-btn:active { transform: scale(0.98); border-color: var(--gold); }
+.option-btn.correct { border-color: var(--success); background: linear-gradient(180deg, rgba(41,224,168,0.18), rgba(41,224,168,0.06)); box-shadow: 0 0 18px rgba(41,224,168,0.35); }
+.option-btn.correct .opt-letter { background: var(--success); border-color: var(--success); color: #003d2e; }
+.option-btn.wrong { border-color: var(--danger); background: linear-gradient(180deg, rgba(255,77,110,0.18), rgba(255,77,110,0.06)); box-shadow: 0 0 18px rgba(255,77,110,0.3); }
+.option-btn.wrong .opt-letter { background: var(--danger); border-color: var(--danger); color: #3d0011; }
+.option-btn.disabled { pointer-events: none; opacity: 0.55; }
+.option-btn.disabled.correct, .option-btn.disabled.wrong { opacity: 1; }
+
+/* ---------- RESULT SCREEN ---------- */
+#screen-result { justify-content: center; }
+.result-content { text-align: center; }
+.result-emoji { font-size: 64px; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(255,215,106,0.55)); }
+.result-content h1 { font-size: 21px; margin: 0 0 4px; color: var(--gold); font-weight: 800; }
+.result-content .result-name { color: var(--text-dim); font-size: 13.5px; margin: 0 0 16px; }
+.result-score {
+  font-size: 52px; font-weight: 800;
+  background: linear-gradient(180deg, #fff6da, var(--gold) 45%, var(--gold-2) 70%, var(--gold-deep));
+  -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1;
+}
+.result-sub { color: var(--text-dim); margin: 6px 0 22px; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+.result-stats { display: flex; justify-content: center; gap: 14px; margin-bottom: 20px; }
+.result-stat { background: linear-gradient(180deg, var(--card-2), var(--card)); border-radius: 16px; padding: 14px 22px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--line); }
+.rs-value { font-size: 20px; font-weight: 800; color: var(--gold); }
+.rs-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+.new-record { background: linear-gradient(135deg, var(--gold), var(--gold-2)); color: #3a2400; font-weight: 800; padding: 11px; border-radius: 999px; margin-bottom: 18px; box-shadow: 0 0 24px rgba(255,215,106,0.45); }
+
+/* ---------- RULES / LEADERBOARD SCREENS ---------- */
+.sub-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-top: 2px; }
+.sub-topbar h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--gold); letter-spacing: 0.3px; }
+
+.how-content { display: flex; flex-direction: column; gap: 14px; }
+.how-item { background: linear-gradient(180deg, var(--card-2), var(--card)); border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); }
+.how-icon { font-size: 22px; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(255,215,106,0.3)); }
+.how-item p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-dim); }
+.how-item strong { color: var(--text); }
+
+.leaderboard-list { display: flex; flex-direction: column; gap: 10px; }
+.lb-empty { text-align: center; color: var(--text-dim); padding: 40px 10px; font-size: 14px; }
+.lb-row { display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, var(--card-2), var(--card)); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.lb-rank { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(180deg, #2a1a7a, #150b48); border: 1px solid var(--gold-deep); color: var(--gold); font-weight: 800; font-size: 12.5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.lb-row.top1 .lb-rank { background: linear-gradient(180deg, var(--gold), var(--gold-2)); color: #3a2400; border-color: var(--gold); }
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-meta { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+.lb-score { font-weight: 800; color: var(--gold); font-size: 15px; flex-shrink: 0; }
+
+/* ======================= KOMANDA YARIŞI (BİL BAKALIM) ======================= */
+.team-setup-hint { color: var(--text-dim); font-size: 13px; line-height: 1.5; margin: 4px 0 18px; }
+.team-inputs-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.team-input-row { display: flex; align-items: center; gap: 8px; }
+.team-input-row input {
+  flex: 1;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-size: 14.5px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+.team-input-row input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255,215,106,0.12); }
+.team-input-row .team-remove-btn {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--danger);
+  font-size: 16px;
+  cursor: pointer;
+}
+.team-select {
+  width: 100%;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  appearance: none;
+}
+.team-turn-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 20px 0; }
+.team-turn-icon { font-size: 42px; margin-bottom: 4px; }
+.team-turn-label { color: var(--text-dim); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin: 0; }
+.team-turn-name { color: var(--gold); font-size: 26px; font-weight: 800; margin: 0 0 14px; text-shadow: 0 0 18px rgba(255,215,106,0.35); }
+.team-turn-hint { color: var(--text-dim); font-size: 12.5px; margin-top: 10px; }
+.team-status-strip { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0 18px; }
+.team-chip { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid var(--line); background: var(--card); color: var(--text-dim); }
+.team-chip.active { border-color: var(--success); color: var(--success); }
+.team-chip.current { border-color: var(--gold); color: var(--gold); background: rgba(255,215,106,0.1); }
+.team-chip.eliminated { border-color: var(--danger); color: var(--danger); opacity: 0.55; text-decoration: line-through; }
+.team-result-list { display: flex; flex-direction: column; gap: 10px; margin: 18px 0; text-align: left; }
+.team-result-row { display: flex; align-items: center; gap: 12px; background: linear-gradient(180deg, var(--card-2), var(--card)); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.team-result-row.winner { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,215,106,0.25); }
+.team-result-rank { width: 30px; height: 30px; border-radius: 50%; background: var(--card); border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: var(--text-dim); flex-shrink: 0; }
+.team-result-row.winner .team-result-rank { background: linear-gradient(180deg, var(--gold), var(--gold-2)); color: #3a2400; border-color: var(--gold); }
+.team-result-name { font-weight: 700; font-size: 14.5px; flex: 1; }
+
+/* ---------- RESPONSIVE: TABLET / DESKTOP ---------- */
+@media (min-width: 700px) {
+  #app { max-width: 720px; padding-top: 30px; }
+  .brand-logo { font-size: 64px; }
+  .brand h1 { font-size: 38px; }
+  .subtitle { font-size: 15px; }
+  .category-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .category-card { padding: 22px 14px; }
+  .category-card .cat-icon { font-size: 32px; }
+  .category-card .cat-name { font-size: 14px; }
+  .question-card h2 { font-size: 22px; }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .result-score { font-size: 64px; }
+}
+@media (min-width: 1080px) {
+  #app { max-width: 860px; }
+  .category-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 340px) {
+  .brand h1 { font-size: 25px; }
+  .question-card h2 { font-size: 17.5px; }
+}
+
+/* ===================================================================
+   Aşağıdakı bloq admin.html-dən gəlir və "#view-admin " prefiksi ilə
+   scope edilib ki, oyunun öz stilləri ilə toqquşmasın.
+   =================================================================== */
+#view-admin {
+  --bg-deep: #060314;
+  --bg-navy: #0a0a2e;
+  --bg-purple: #1c0f45;
+  --card: #150f3d;
+  --card-2: #1f1856;
+  --card-3: #241c66;
+  --line: rgba(160, 130, 255, 0.22);
+  --text: #f6f3ff;
+  --text-dim: #ab9fd9;
+  --gold: #ffd76a;
+  --gold-2: #ffb92e;
+  --gold-deep: #a3690a;
+  --purple: #8b5cf6;
+  --purple-2: #b39bfa;
+  --success: #29e0a8;
+  --danger: #ff4b6e;
+  --radius: 14px;
+}
+#view-admin * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+#view-admin { margin: 0; padding: 0; min-height: 100vh; background: linear-gradient(180deg, var(--bg-navy) 0%, var(--bg-purple) 50%, var(--bg-deep) 100%); }
+#view-admin {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: linear-gradient(180deg, var(--bg-navy) 0%, var(--bg-purple) 45%, var(--bg-deep) 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  min-height: 100vh;
+}
+#view-admin #admin-app { max-width: 1100px; margin: 0 auto; padding: 16px 16px 60px; }
+
+/* ---------- HEADER ---------- */
+#view-admin .admin-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 4px; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+#view-admin .admin-header .brand-mini { font-size: 18px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+#view-admin .admin-header .brand-mini span { color: var(--text-dim); font-weight: 600; font-size: 14px; }
+#view-admin .link-btn {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line); color: var(--text); text-decoration: none;
+  padding: 10px 16px; border-radius: 999px; font-size: 13.5px; font-weight: 700;
+}
+
+/* ---------- TABS ---------- */
+#view-admin .tabs { display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+#view-admin .tab-btn {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line); color: var(--text-dim);
+  padding: 12px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: inherit;
+}
+#view-admin .tab-btn.active { color: var(--gold); border-color: var(--gold-deep); box-shadow: 0 0 0 1px rgba(255,215,106,0.15) inset; }
+
+#view-admin .tab-panel { display: none; }
+#view-admin .tab-panel.active { display: block; animation: adminFadeIn 0.2s ease; }
+@keyframes adminFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+#view-admin .panel-title { font-size: 15px; font-weight: 800; color: var(--gold); margin: 22px 0 12px; display: flex; align-items: center; gap: 8px; }
+#view-admin .panel-title:first-child { margin-top: 4px; }
+#view-admin .panel-sub { color: var(--text-dim); font-size: 13px; margin: -8px 0 16px; line-height: 1.5; }
+
+/* ---------- CARD / TOOLBAR ---------- */
+#view-admin .card {
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 16px;
+}
+#view-admin .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+#view-admin .toolbar > * { flex-shrink: 0; }
+#view-admin .toolbar input[type="search"], #view-admin .toolbar select, #view-admin .field input, #view-admin .field select, #view-admin .field textarea {
+  background: var(--card); border: 1px solid var(--line); color: var(--text);
+  border-radius: 10px; padding: 11px 13px; font-size: 14px; font-family: inherit; outline: none;
+}
+#view-admin .toolbar input[type="search"] { flex: 1; min-width: 180px; }
+#view-admin .toolbar select { min-width: 130px; }
+#view-admin .field input:focus, #view-admin .field select:focus, #view-admin .field textarea:focus, #view-admin .toolbar input:focus, #view-admin .toolbar select:focus { border-color: var(--gold); }
+
+/* ---------- BUTTONS ---------- */
+#view-admin .btn {
+  border: none; border-radius: 999px; padding: 12px 18px; font-size: 13.5px; font-weight: 800;
+  cursor: pointer; font-family: inherit; transition: transform 0.1s ease; white-space: nowrap;
+}
+#view-admin .btn:active { transform: scale(0.96); }
+#view-admin .btn-primary { background: linear-gradient(180deg, #3a1e99, #1a1166); color: var(--gold); border: 1.5px solid var(--gold); }
+#view-admin .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+#view-admin .btn-danger { background: linear-gradient(180deg, #a1233f, #6e0f27); color: #ffd9df; border: 1.5px solid var(--danger); }
+#view-admin .btn-success { background: linear-gradient(180deg, #0f8f6a, #0a5c45); color: #d9fff2; border: 1.5px solid var(--success); }
+#view-admin .btn-sm { padding: 8px 13px; font-size: 12.5px; }
+#view-admin .btn-block { width: 100%; }
+#view-admin .btn[disabled] { opacity: 0.4; pointer-events: none; }
+
+/* ---------- TABLE ---------- */
+#view-admin .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); }
+#view-admin table { width: 100%; border-collapse: collapse; min-width: 720px; }
+#view-admin th, #view-admin td { padding: 12px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--line); }
+#view-admin th { background: var(--card-3); color: var(--gold); font-weight: 800; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+#view-admin tbody tr { background: var(--card); }
+#view-admin tbody tr:hover { background: var(--card-2); }
+#view-admin td.q-text { max-width: 320px; white-space: normal; line-height: 1.4; }
+#view-admin td.nowrap { white-space: nowrap; }
+#view-admin .status-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+#view-admin .status-chip.active { background: rgba(41,224,168,0.15); color: var(--success); }
+#view-admin .status-chip.inactive { background: rgba(255,75,110,0.15); color: var(--danger); }
+#view-admin .diff-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(139,92,246,0.18); color: var(--purple-2); }
+#view-admin .row-actions { display: flex; gap: 6px; }
+#view-admin .icon-action {
+  background: var(--card-2); border: 1px solid var(--line); color: var(--text);
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+#view-admin .icon-action.danger { color: var(--danger); border-color: rgba(255,75,110,0.35); }
+
+#view-admin .bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: linear-gradient(180deg, var(--card-3), var(--card-2));
+  border: 1px solid var(--gold-deep); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px;
+}
+#view-admin .bulk-bar span { font-weight: 700; font-size: 13px; color: var(--gold); margin-right: auto; }
+
+#view-admin .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+#view-admin .pagination span { font-size: 13px; color: var(--text-dim); }
+
+#view-admin .loading-msg, #view-admin .empty-msg { text-align: center; color: var(--text-dim); padding: 34px 10px; font-size: 14px; }
+
+/* ---------- CATEGORY LIST ---------- */
+#view-admin .category-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+#view-admin .category-item {
+  background: linear-gradient(180deg, var(--card-2), var(--card)); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px;
+}
+#view-admin .category-item .ci-top { display: flex; align-items: center; gap: 10px; }
+#view-admin .category-item .ci-icon { font-size: 26px; }
+#view-admin .category-item .ci-name { font-weight: 800; font-size: 15px; flex: 1; }
+#view-admin .category-item .ci-count { font-size: 12px; color: var(--text-dim); }
+#view-admin .category-item .ci-actions { display: flex; gap: 8px; }
+
+/* ---------- FORM / MODAL ---------- */
+#view-admin .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+#view-admin .field label { font-size: 12px; font-weight: 700; color: var(--purple-2); text-transform: uppercase; letter-spacing: 0.3px; }
+#view-admin .field textarea { resize: vertical; min-height: 70px; }
+#view-admin .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#view-admin .field-hint { font-size: 11.5px; color: var(--text-dim); margin-top: -2px; }
+#view-admin .toggle-row { display: flex; align-items: center; gap: 10px; }
+#view-admin .toggle-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--gold); }
+#view-admin .field-error { color: var(--danger); font-size: 12px; margin-top: -2px; display: none; }
+#view-admin .field.has-error input, #view-admin .field.has-error select, #view-admin .field.has-error textarea { border-color: var(--danger); }
+#view-admin .field.has-error .field-error { display: block; }
+#view-admin .warn-box {
+  background: rgba(255, 185, 46, 0.1); border: 1px solid var(--gold-deep); border-radius: 10px;
+  padding: 12px 14px; font-size: 13px; color: var(--gold); margin-bottom: 14px; display: none;
+}
+#view-admin .warn-box.show { display: block; }
+
+#view-admin .modal-overlay {
+  position: fixed; inset: 0; background: rgba(3, 4, 20, 0.72); backdrop-filter: blur(2px);
+  display: flex; align-items: flex-end; justify-content: center; z-index: 100; padding: 0;
+}
+#view-admin .modal {
+  background: linear-gradient(180deg, var(--card-3), var(--bg-navy));
+  border: 1px solid var(--gold-deep); border-radius: 20px 20px 0 0;
+  padding: 22px 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
+  width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+}
+@media (min-width: 700px) {
+  #view-admin .modal-overlay { align-items: center; }
+  #view-admin .modal { border-radius: 20px; max-height: 85vh; }
+}
+#view-admin .modal h3 { margin: 0 0 16px; font-size: 17px; color: var(--gold); }
+#view-admin .modal p { font-size: 14px; line-height: 1.6; color: var(--text-dim); }
+#view-admin .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+#view-admin .modal-actions .btn { flex: 1; }
+
+/* ---------- IMPORT ---------- */
+#view-admin .dropzone {
+  border: 2px dashed var(--line); border-radius: var(--radius); padding: 30px 16px;
+  text-align: center; color: var(--text-dim); font-size: 14px; cursor: pointer; margin-bottom: 16px;
+}
+#view-admin .dropzone:hover { border-color: var(--gold-deep); }
+#view-admin .import-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+#view-admin .import-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 16px; }
+#view-admin .import-stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+#view-admin .import-stat .n { font-size: 20px; font-weight: 800; color: var(--gold); }
+#view-admin .import-stat .l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; }
+#view-admin .import-stat.err .n { color: var(--danger); }
+#view-admin .import-stat.dup .n { color: var(--gold-2); }
+#view-admin .preview-row-error { background: rgba(255,75,110,0.08) !important; }
+#view-admin .preview-row-dup { background: rgba(255,185,46,0.08) !important; }
+#view-admin .preview-reason { font-size: 11.5px; color: var(--danger); }
+
+/* ---------- EXPORT / BACKUP ---------- */
+#view-admin .btn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+#view-admin .radio-row { display: flex; gap: 16px; margin-bottom: 14px; }
+#view-admin .radio-row label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+#view-admin .radio-row input[type="radio"] { width: 18px; height: 18px; accent-color: var(--gold); }
+
+/* ---------- TOAST ---------- */
+#view-admin .toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(180deg, var(--card-2), var(--card)); border: 1px solid var(--gold-deep);
+  color: var(--gold); padding: 13px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4); opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease; z-index: 200; max-width: 90vw; text-align: center;
+}
+#view-admin .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#view-admin .toast.error { border-color: var(--danger); color: #ffd9df; }
+
+@media (max-width: 640px) {
+  #view-admin table { min-width: 0; }
+  #view-admin th:nth-child(1), #view-admin td:nth-child(1) { width: 32px; }
+  #view-admin .field-row { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+<div class="stage-rays"></div>
+<div id="app">
+
+  <div class="top-bar" id="top-bar">
+    <span class="tb-title">🏆 BilGörək</span>
+    <div style="display:flex; gap:8px;">
+      <button class="icon-btn" id="btn-admin-open" title="Admin panel">⚙️</button>
+      <button class="icon-btn" id="btn-sound" title="Səsi aç/bağla">🔊</button>
+    </div>
+  </div>
+
+  <!-- ANA SƏHİFƏ -->
+  <section id="screen-home" class="screen active">
+    <div class="brand">
+      <div class="brand-logo">🏆🧠</div>
+      <h1>BilGörək</h1>
+      <p class="subtitle">Bilirsənmi? Gəl görək!</p>
+    </div>
+
+    <div class="name-field">
+      <label for="player-name">Adınızı daxil edin</label>
+      <input type="text" id="player-name" maxlength="20" placeholder="Məsələn: Araz" autocomplete="off">
+    </div>
+
+    <button class="btn btn-primary btn-lg" id="btn-play">🎯 Oyuna başla</button>
+
+    <div class="section-title">📚 Kateqoriyalar</div>
+    <div class="category-grid" id="category-grid"></div>
+
+    <div class="home-actions">
+      <div class="link-row" id="btn-leaderboard">
+        <span class="lr-left"><span class="lr-icon">🏆</span> Ən yaxşı nəticələr</span>
+        <span class="lr-arrow">›</span>
+      </div>
+      <div class="link-row" id="btn-rules">
+        <span class="lr-left"><span class="lr-icon">📖</span> Oyun qaydaları</span>
+        <span class="lr-arrow">›</span>
+      </div>
+      <div class="link-row" id="btn-team-mode" style="display:none">
+        <span class="lr-left"><span class="lr-icon">🎙️</span> Komanda yarışı (Bil Bakalım)</span>
+        <span class="lr-arrow">›</span>
+      </div>
+      <div class="link-row" id="btn-live-mode" style="display:none">
+        <span class="lr-left"><span class="lr-icon">🌐</span> Canlı yarış (hər öz telefonu ilə)</span>
+        <span class="lr-arrow">›</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- OYUN QAYDALARI -->
+  <section id="screen-rules" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-rules-back">←</button>
+      <h2>Oyun qaydaları</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="how-content">
+      <div class="how-item"><span class="how-icon">✍️</span><p><strong>Ad daxil et:</strong> Oyuna başlamazdan əvvəl öz adını yaz — nəticən "Ən yaxşı nəticələr" bölməsində bu adla saxlanılacaq.</p></div>
+      <div class="how-item"><span class="how-icon">📚</span><p><strong>Kateqoriya seç:</strong> 7 fərqli kateqoriyadan birini seç, ya da "Oyuna başla" düyməsi ilə bütün kateqoriyalardan qarışıq sual dəsti al.</p></div>
+      <div class="how-item"><span class="how-icon">❓</span><p><strong>10 sual:</strong> Hər oyunda təsadüfi seçilmiş 10 sual verilir, hər sualın 4 cavab variantı və yalnız 1 düzgün cavabı var.</p></div>
+      <div class="how-item"><span class="how-icon">⏱️</span><p><strong>20 saniyə:</strong> Hər suala cavab vermək üçün 20 saniyən var. Vaxt bitərsə sual səhv sayılır.</p></div>
+      <div class="how-item"><span class="how-icon">💯</span><p><strong>Xal sistemi:</strong> Doğru cavab 100 xal qazandırır, üstəlik qalan hər saniyə üçün əlavə bonus xal əlavə olunur — nə qədər sürətli cavab versən, bir o qədər çox xal qazanacaqsan.</p></div>
+      <div class="how-item"><span class="how-icon">🔊</span><p><strong>Səs:</strong> Sağ yuxarı küncdəki düymə ilə səs effektlərini istənilən vaxt aça/bağlaya bilərsən.</p></div>
+      <div class="how-item"><span class="how-icon">💡</span><p><strong>İpucu və izah:</strong> Bəzi sualların altında "İpucu göstər" düyməsi ola bilər, cavab verdikdən sonra isə düzgün cavabın qısa izahı görünə bilər (admin tərəfindən əlavə edilibsə).</p></div>
+    </div>
+  </section>
+
+  <!-- ƏN YAXŞI NƏTİCƏLƏR -->
+  <section id="screen-leaderboard" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-leaderboard-back">←</button>
+      <h2>Ən yaxşı nəticələr</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="leaderboard-list" id="leaderboard-list"></div>
+  </section>
+
+  <!-- KOMANDA YARIŞI (BİL BAKALIM) — QURULUŞ -->
+  <section id="screen-team-setup" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-team-setup-back">←</button>
+      <h2>Komanda yarışı</h2>
+      <div style="width:42px"></div>
+    </div>
+    <p class="team-setup-hint">Komandaların adlarını yaz, kateqoriya seç və yarışa başla. Sual sıra ilə hər komandaya verilir — səhv cavab verən komanda oyundan çıxır, son qalan komanda qalib olur! 🏆</p>
+
+    <div class="section-title">👥 Komandalar</div>
+    <div id="team-inputs-list" class="team-inputs-list"></div>
+    <button class="btn btn-secondary" id="btn-team-add">➕ Komanda əlavə et</button>
+
+    <div class="section-title" style="margin-top:22px;">📚 Kateqoriya</div>
+    <select id="team-category-select" class="team-select"></select>
+
+    <button class="btn btn-primary btn-lg" id="btn-team-start" style="margin-top:22px;">🏁 Yarışa başla</button>
+  </section>
+
+  <!-- KOMANDA YARIŞI — NÖVBƏ BANNERİ -->
+  <section id="screen-team-turn" class="screen">
+    <div class="team-turn-wrap">
+      <div class="team-turn-icon">🎙️</div>
+      <p class="team-turn-label">Sıradakı komanda</p>
+      <h1 class="team-turn-name" id="team-turn-name">Komanda 1</h1>
+      <div class="team-status-strip" id="team-status-strip"></div>
+      <button class="btn btn-primary btn-lg" id="btn-team-turn-go">▶️ Sualı göstər</button>
+      <p class="team-turn-hint">Telefonu komandaya ötür, sonra bas 👆</p>
+    </div>
+  </section>
+
+  <!-- KOMANDA YARIŞI — SUAL EKRANI -->
+  <section id="screen-team-game" class="screen">
+    <div class="game-header">
+      <button class="icon-btn" id="btn-team-quit">✕</button>
+      <span class="game-player" id="team-game-player-name"></span>
+      <div class="timer-pill" id="team-timer-pill">20</div>
+    </div>
+    <div class="team-status-strip" id="team-status-strip-2"></div>
+    <div class="question-card">
+      <div class="question-meta">
+        <span id="team-q-category-icon"></span>
+      </div>
+      <h2 id="team-question-text">...</h2>
+    </div>
+    <div class="options-grid" id="team-options-grid"></div>
+    <div class="explanation-box" id="team-explanation-box" style="display:none"></div>
+  </section>
+
+  <!-- KOMANDA YARIŞI — NƏTİCƏ -->
+  <section id="screen-team-result" class="screen">
+    <div class="result-content">
+      <div class="result-emoji">🏆</div>
+      <h1>Yarış bitdi!</h1>
+      <p class="result-sub" id="team-result-winner-line">Qalib: —</p>
+      <div class="team-result-list" id="team-result-list"></div>
+      <button class="btn btn-primary btn-lg" id="btn-team-play-again">🔁 Yenidən oyna</button>
+      <button class="btn btn-secondary" id="btn-team-result-home">🏠 Ana səhifə</button>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — GİRİŞ -->
+  <section id="screen-live-entry" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-entry-back">←</button>
+      <h2>Canlı yarış</h2>
+      <div style="width:42px"></div>
+    </div>
+    <p class="team-setup-hint">Hər komanda öz telefonundan qoşulur. Eyni sual eyni anda hamıya gəlir — kim daha tez və düzgün cavab versə, daha çox xal qazanır! 🌐</p>
+    <button class="btn btn-primary btn-lg" id="btn-live-host">🎬 Otaq yarat (Aparıcı)</button>
+    <button class="btn btn-secondary" id="btn-live-join-open">🔑 Otağa qoşul (Kodla)</button>
+  </section>
+
+  <!-- CANLI YARIŞ — APARICI QURULUŞU -->
+  <section id="screen-live-host-setup" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-host-setup-back">←</button>
+      <h2>Otaq yarat</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="section-title">📚 Kateqoriya</div>
+    <select id="live-host-category-select" class="team-select"></select>
+    <button class="btn btn-primary btn-lg" id="btn-live-host-create" style="margin-top:22px;">🏁 Otaq yarat</button>
+  </section>
+
+  <!-- CANLI YARIŞ — OTAĞA QOŞUL -->
+  <section id="screen-live-join" class="screen">
+    <div class="sub-topbar">
+      <button class="icon-btn" id="btn-live-join-back">←</button>
+      <h2>Otağa qoşul</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="name-field">
+      <label>Otaq kodu</label>
+      <input type="text" id="live-join-code" maxlength="4" inputmode="numeric" placeholder="Məs: 4821">
+    </div>
+    <div class="name-field">
+      <label>Komandanızın adı</label>
+      <input type="text" id="live-join-team-name" maxlength="18" placeholder="Məs: Qırmızılar">
+    </div>
+    <div id="live-join-error" style="color:var(--danger); font-size:12.5px; min-height:16px; margin-bottom:10px;"></div>
+    <button class="btn btn-primary btn-lg" id="btn-live-join-submit">🔑 Qoşul</button>
+  </section>
+
+  <!-- CANLI YARIŞ — GÖZLƏMƏ OTAĞI -->
+  <section id="screen-live-lobby" class="screen">
+    <div class="team-turn-wrap">
+      <p class="team-turn-label">Otaq kodu</p>
+      <h1 class="team-turn-name" id="live-lobby-code">0000</h1>
+      <p class="team-turn-hint" id="live-lobby-hint">Bu kodu digər komandalara söylə.</p>
+      <div class="team-status-strip" id="live-lobby-teams"></div>
+      <button class="btn btn-primary btn-lg" id="btn-live-lobby-start" style="display:none;">▶️ Yarışa başla</button>
+      <p class="team-turn-hint" id="live-lobby-wait-msg" style="display:none;">Aparıcının başlamasını gözləyin...</p>
+      <button class="btn btn-secondary" id="btn-live-lobby-leave">✕ Çıx</button>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — SUAL (KOMANDA TƏRƏFİ) -->
+  <section id="screen-live-question" class="screen">
+    <div class="game-header">
+      <span class="game-player" id="live-q-counter"></span>
+      <div class="timer-pill" id="live-timer-pill">20</div>
+    </div>
+    <div class="question-card">
+      <div class="question-meta"><span id="live-q-category-icon"></span></div>
+      <h2 id="live-question-text">...</h2>
+    </div>
+    <div class="options-grid" id="live-options-grid"></div>
+  </section>
+
+  <!-- CANLI YARIŞ — CAVAB VERİLDİ, GÖZLƏMƏ -->
+  <section id="screen-live-waiting" class="screen">
+    <div class="team-turn-wrap">
+      <div class="team-turn-icon" id="live-waiting-icon">✅</div>
+      <p class="team-turn-label" id="live-waiting-label">Cavabın qeydə alındı</p>
+      <div class="team-status-strip" id="live-waiting-scoreboard"></div>
+      <p class="team-turn-hint">Aparıcı növbəti suala keçəndə davam edəcək...</p>
+    </div>
+  </section>
+
+  <!-- CANLI YARIŞ — APARICI İDARƏETMƏ EKRANI -->
+  <section id="screen-live-host-control" class="screen">
+    <div class="sub-topbar">
+      <div style="width:42px"></div>
+      <h2 id="live-host-q-counter">Sual 1/10</h2>
+      <div style="width:42px"></div>
+    </div>
+    <div class="question-card">
+      <div class="question-meta"><span id="live-host-q-category-icon"></span></div>
+      <h2 id="live-host-question-text">...</h2>
+    </div>
+    <p class="team-turn-hint" id="live-host-answer-count">0/0 komanda cavab verdi</p>
+    <div class="team-status-strip" id="live-host-scoreboard"></div>
+    <button class="btn btn-primary btn-lg" id="btn-live-host-next">➡️ Növbəti sual</button>
+  </section>
+
+  <!-- CANLI YARIŞ — NƏTİCƏ -->
+  <section id="screen-live-result" class="screen">
+    <div class="result-content">
+      <div class="result-emoji">🏆</div>
+      <h1>Canlı yarış bitdi!</h1>
+      <div class="team-result-list" id="live-result-list"></div>
+      <button class="btn btn-secondary" id="btn-live-result-home">🏠 Ana səhifə</button>
+    </div>
+  </section>
+
+  <!-- OYUN EKRANI -->
+  <section id="screen-game" class="screen">
+    <div class="game-header">
+      <button class="icon-btn" id="btn-quit">✕</button>
+      <span class="game-player" id="game-player-name"></span>
+      <div class="timer-pill" id="timer-pill">20</div>
+      <div class="score-mini"><span id="current-score">0</span> xal</div>
+    </div>
+
+    <div class="progress-bar-wrap"><div class="progress-bar" id="question-progress"></div></div>
+
+    <div class="question-card">
+      <div class="question-meta">
+        <span id="q-category-icon"></span>
+        <span id="q-counter">Sual 1/10</span>
+      </div>
+      <h2 id="question-text">...</h2>
+    </div>
+
+    <button class="hint-btn" id="btn-hint" style="display:none">💡 İpucu göstər</button>
+    <div class="hint-box" id="hint-box" style="display:none"></div>
+
+    <div class="options-grid" id="options-grid"></div>
+
+    <div class="explanation-box" id="explanation-box" style="display:none"></div>
+  </section>
+
+  <!-- NƏTİCƏ EKRANI -->
+  <section id="screen-result" class="screen">
+    <div class="result-content">
+      <div class="result-emoji" id="result-emoji">🏆</div>
+      <h1 id="result-title">Əla nəticə!</h1>
+      <p class="result-name" id="result-name"></p>
+      <div class="result-score" id="result-score">0</div>
+      <p class="result-sub">xal qazandın</p>
+      <div class="result-stats">
+        <div class="result-stat"><span class="rs-value" id="result-correct">0</span><span class="rs-label">Doğru cavab</span></div>
+        <div class="result-stat"><span class="rs-value" id="result-category">—</span><span class="rs-label">Kateqoriya</span></div>
+      </div>
+      <div id="new-record-badge" class="new-record" style="display:none">🎉 Yeni rekord!</div>
+      <button class="btn btn-primary btn-lg" id="btn-play-again">🔁 Yenidən oyna</button>
+      <button class="btn btn-secondary" id="btn-download-report">🖨️ Nəticəni yüklə (müəllimə vermək üçün)</button>
+      <button class="btn btn-secondary" id="btn-to-home">🏠 Ana səhifə</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- ======================= ADMİN PANELİ (admin.html-dən inteqrasiya olunub) ======================= -->
+<div id="view-admin" style="display:none;">
+<div id="admin-app">
+
+  <div class="admin-header">
+    <div class="brand-mini">🛠️ BilGörək <span>Admin Panel</span></div>
+    <button type="button" class="link-btn" id="btn-admin-to-game">🎮 Oyuna qayıt</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="questions">📋 Suallar</button>
+    <button class="tab-btn" data-tab="categories">🗂️ Kateqoriyalar</button>
+    <button class="tab-btn" data-tab="import">📥 İdxal</button>
+    <button class="tab-btn" data-tab="export">📤 İxrac / Ehtiyat nüsxəsi</button>
+  </nav>
+
+  <!-- ======================= SUALLAR ======================= -->
+  <section id="tab-questions" class="tab-panel active">
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btn-add-question">+ Yeni sual</button>
+      <input type="search" id="search-input" placeholder="🔍 Sual mətnində axtar...">
+      <select id="filter-category"><option value="">Bütün kateqoriyalar</option></select>
+      <select id="filter-difficulty"><option value="">Bütün çətinliklər</option></select>
+      <select id="filter-status">
+        <option value="">Bütün statuslar</option>
+        <option value="active">Yalnız aktiv</option>
+        <option value="inactive">Yalnız passiv</option>
+      </select>
+    </div>
+
+    <div class="bulk-bar" id="bulk-bar" style="display:none">
+      <span id="bulk-count">0 seçildi</span>
+      <button class="btn btn-secondary btn-sm" id="bulk-activate">✅ Aktivləşdir</button>
+      <button class="btn btn-secondary btn-sm" id="bulk-deactivate">🚫 Passivləşdir</button>
+      <button class="btn btn-danger btn-sm" id="bulk-delete">🗑️ Sil</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="questions-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all"></th>
+            <th>ID</th>
+            <th>Sual</th>
+            <th>Kateqoriya</th>
+            <th>Çətinlik</th>
+            <th>Düzgün</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="questions-tbody">
+          <tr><td colspan="8" class="loading-msg">Yüklənir...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </section>
+
+  <!-- ======================= KATEQORİYALAR ======================= -->
+  <section id="tab-categories" class="tab-panel">
+    <div class="toolbar">
+      <button class="btn btn-primary" id="btn-add-category">+ Yeni kateqoriya</button>
+    </div>
+    <div class="category-list" id="category-list">
+      <div class="loading-msg">Yüklənir...</div>
+    </div>
+  </section>
+
+  <!-- ======================= İDXAL ======================= -->
+  <section id="tab-import" class="tab-panel">
+    <div class="panel-title">📥 Sualları idxal et</div>
+    <p class="panel-sub">Excel (.xlsx), CSV (.csv) və ya JSON (.json) faylından toplu şəkildə sual əlavə edin. Sütunlar: id, sual, cavabA, cavabB, cavabC, cavabD, duzgunCavab, kateqoriya, cetinlik, izah, ipucu, aktiv.</p>
+
+    <div class="panel-title" style="margin-top:6px">📄 Şablonlar</div>
+    <div class="btn-grid">
+      <button class="btn btn-secondary" id="tpl-blank-xlsx">Boş Excel şablonunu yüklə</button>
+      <button class="btn btn-secondary" id="tpl-example-xlsx">Nümunəli Excel şablonunu yüklə</button>
+      <button class="btn btn-secondary" id="tpl-csv">CSV şablonunu yüklə</button>
+      <button class="btn btn-secondary" id="tpl-json">JSON şablonunu yüklə</button>
+    </div>
+
+    <div class="panel-title">📎 Fayl seç</div>
+    <div class="dropzone" id="dropzone">
+      <div>📁 Fayl seçmək üçün toxunun (.xlsx, .csv, .json)</div>
+      <input type="file" id="import-file-input" accept=".xlsx,.csv,.json" style="display:none">
+    </div>
+
+    <div class="import-options">
+      <label class="toggle-row"><input type="checkbox" id="opt-skip-duplicates" checked> <span>Təkrarlananları ötür</span></label>
+      <label class="toggle-row"><input type="checkbox" id="opt-update-existing"> <span>Mövcud sualları yenilə (id və ya eyni mətn üzrə)</span></label>
+    </div>
+
+    <div id="import-preview-area" style="display:none">
+      <div class="import-summary-grid" id="import-summary-grid"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>#</th><th>Sual</th><th>Kateqoriya</th><th>Status</th></tr></thead>
+          <tbody id="import-preview-tbody"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary btn-block" id="btn-confirm-import" style="margin-top:16px">✅ İdxalı təsdiqlə</button>
+    </div>
+  </section>
+
+  <!-- ======================= İXRAC / EHTİYAT ======================= -->
+  <section id="tab-export" class="tab-panel">
+    <div class="panel-title">🌐 Server (bütün cihazlarda eyni suallar)</div>
+    <p class="panel-sub">Standart olaraq suallar yalnız BU cihazda (bu telefonda) saxlanılır. Əgər istəyirsiniz ki, başqa telefonlarda da eyni suallar, kateqoriyalar və reytinq görünsün, pulsuz bir Firebase (Google) layihəsi qoşa bilərsiniz — bir dəfə qoşulduqdan sonra bütün cihazlar avtomatik sinxron işləyəcək.</p>
+    <div class="card">
+      <div id="server-status-box" class="field-hint" style="font-weight:600;margin-bottom:12px">Yoxlanılır…</div>
+
+      <div id="server-connect-block">
+        <p class="panel-sub" style="margin-top:0">1) <b>console.firebase.google.com</b> ünvanında pulsuz hesab/layihə yaradın. 2) Layihədə <b>Firestore Database</b>-i aktivləşdirin (test rejimində). 3) Layihə parametrlərindən "Web app" əlavə edib, sizə verilən <b>firebaseConfig</b> obyektini (JSON formasında, məs: <code>{"apiKey":"...","projectId":"..."}</code>) kopyalayıb aşağıya yapışdırın.</p>
+        <div class="field">
+          <label>Firebase konfiqurasiyası (firebaseConfig)</label>
+          <textarea id="firebase-config-input" rows="5" placeholder='{"apiKey":"AIzaSy...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+          <div class="field-error" id="firebase-config-error">Konfiqurasiya düzgün JSON formatında olmalı və ən azı apiKey və projectId sahələrini daxil etməlidir</div>
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-connect-firebase">🔗 Serverə qoşul</button>
+      </div>
+
+      <div id="server-disconnect-block" style="display:none">
+        <button class="btn btn-secondary btn-block" id="btn-disconnect-firebase">📴 Yalnız bu cihazda işlə (serveri söndür)</button>
+      </div>
+    </div>
+
+    <div class="panel-title">🔒 Admin parolu</div>
+    <p class="panel-sub">Bu parol admin panelinə girişi qoruyur — oyunçular yalnız oyun oynaya bilir, sualları yalnız düzgün parolu bilən şəxs dəyişə bilər. Serverə (Firebase) qoşulmusunuzsa, parolu dəyişdikdə bu bütün cihazlarda eyni olacaq.</p>
+    <div class="card">
+      <div class="field">
+        <label>Hazırkı parol</label>
+        <input type="password" id="pin-current" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Yeni parol</label><input type="password" id="pin-new" autocomplete="off"></div>
+        <div class="field"><label>Yeni parol (təkrar)</label><input type="password" id="pin-new-confirm" autocomplete="off"></div>
+      </div>
+      <div class="field-hint" id="pin-error" style="margin-bottom:12px"></div>
+      <button class="btn btn-primary btn-block" id="btn-change-pin">🔒 Parolu dəyiş</button>
+    </div>
+
+    <div class="panel-title">⚙️ Oyun parametrləri</div>
+    <div class="card">
+      <div class="field-row">
+        <div class="field"><label>Tur üzrə sual sayı</label><input type="number" id="gp-questionsPerRound" min="1" max="50"></div>
+        <div class="field"><label>Sual üçün vaxt (saniyə)</label><input type="number" id="gp-timePerQuestion" min="5" max="120"></div>
+        <div class="field"><label>Doğru cavab üçün əsas xal</label><input type="number" id="gp-basePoints" min="0" max="1000"></div>
+        <div class="field"><label>Saniyə bonusu (xal/saniyə)</label><input type="number" id="gp-timeBonusPerSec" min="0" max="100"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-save-gameparams">💾 Parametrləri yadda saxla</button>
+    </div>
+
+    <div class="panel-title">📤 Sual bazasını ixrac et</div>
+    <p class="panel-sub">Bütün sual bazasını (bütün suallar, aktiv və passiv) seçdiyiniz formatda endirin.</p>
+    <div class="btn-grid">
+      <button class="btn btn-secondary" id="export-xlsx">Excel (.xlsx) olaraq ixrac et</button>
+      <button class="btn btn-secondary" id="export-csv">CSV (.csv) olaraq ixrac et</button>
+      <button class="btn btn-secondary" id="export-json">JSON (.json) olaraq ixrac et</button>
+    </div>
+
+    <div class="panel-title">🗄️ Ehtiyat nüsxəsi</div>
+    <p class="panel-sub">Ehtiyat nüsxəsinə bütün suallar, kateqoriyalar, oyun parametrləri və reytinq (lider lövhəsi) məlumatları daxildir. Bu, məlumatlarınızı başqa cihaza köçürməyin və ya itki halında bərpa etməyin yeganə yoludur — brauzerdə saxlanan suallar yalnız bu cihazda qalır.</p>
+    <div class="card">
+      <button class="btn btn-success btn-block" id="btn-create-backup">💾 Ehtiyat nüsxəsini yarat (JSON)</button>
+    </div>
+
+    <div class="panel-title">♻️ Ehtiyat nüsxəsini bərpa et</div>
+    <div class="card">
+      <div class="dropzone" id="restore-dropzone">
+        <div>📁 Ehtiyat nüsxəsi faylını seçin (.json)</div>
+        <input type="file" id="restore-file-input" accept=".json" style="display:none">
+      </div>
+      <div id="restore-file-name" class="field-hint" style="margin-bottom:12px"></div>
+      <div class="radio-row">
+        <label><input type="radio" name="restore-mode" value="merge" checked> Mövcud məlumatlarla birləşdir</label>
+        <label><input type="radio" name="restore-mode" value="overwrite"> Mövcud məlumatların üzərinə yaz</label>
+      </div>
+      <button class="btn btn-danger btn-block" id="btn-do-restore" disabled>♻️ Bərpa et</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- ======================= MODALS ======================= -->
+<div class="modal-overlay" id="question-modal-overlay" style="display:none">
+  <div class="modal">
+    <h3 id="question-modal-title">Yeni sual</h3>
+    <div class="warn-box" id="duplicate-warn-box">⚠️ Bu sual bazada artıq mövcuddur. Yenə də yadda saxlamaq istəyirsinizsə, "Yenə də saxla" düyməsinə basın.</div>
+    <form id="question-form">
+      <div class="field">
+        <label>Sualın mətni *</label>
+        <textarea id="qf-sual" required></textarea>
+        <div class="field-error">Sual mətni boş ola bilməz</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>A cavabı *</label><input type="text" id="qf-cavabA" required><div class="field-error">Boş ola bilməz</div></div>
+        <div class="field"><label>B cavabı *</label><input type="text" id="qf-cavabB" required><div class="field-error">Boş ola bilməz</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>C cavabı *</label><input type="text" id="qf-cavabC" required><div class="field-error">Boş ola bilməz</div></div>
+        <div class="field"><label>D cavabı *</label><input type="text" id="qf-cavabD" required><div class="field-error">Boş ola bilməz</div></div>
+      </div>
+      <div class="field">
+        <label>Düzgün cavab *</label>
+        <select id="qf-duzgunCavab" required>
+          <option value="">— Seçin —</option>
+          <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+        </select>
+        <div class="field-error">Düzgün cavab seçilməlidir</div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Kateqoriya *</label>
+          <select id="qf-kateqoriya" required></select>
+          <div class="field-error">Kateqoriya seçilməlidir</div>
+        </div>
+        <div class="field">
+          <label>Çətinlik səviyyəsi *</label>
+          <select id="qf-cetinlik" required>
+            <option value="Asan">Asan</option>
+            <option value="Orta" selected>Orta</option>
+            <option value="Çətin">Çətin</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Düzgün cavabın qısa izahı</label>
+        <textarea id="qf-izah" placeholder="Məsələn: Bakı Azərbaycanın paytaxtı və ən böyük şəhəridir."></textarea>
+      </div>
+      <div class="field">
+        <label>İpucu</label>
+        <input type="text" id="qf-ipucu" placeholder="Məsələn: Bu şəhər Xəzər dənizinin sahilindədir.">
+      </div>
+      <div class="field toggle-row">
+        <input type="checkbox" id="qf-aktiv" checked>
+        <label style="text-transform:none; font-size:14px; color:var(--text)">Sual aktivdir (oyunda göstərilsin)</label>
+      </div>
+    </form>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="qf-cancel">Ləğv et</button>
+      <button class="btn btn-primary" id="qf-save">💾 Yadda saxla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="category-modal-overlay" style="display:none">
+  <div class="modal">
+    <h3 id="category-modal-title">Yeni kateqoriya</h3>
+    <div class="field">
+      <label>Ad *</label>
+      <input type="text" id="cf-name" required>
+      <div class="field-error" id="cf-name-error">Ad boş ola bilməz</div>
+    </div>
+    <div class="field">
+      <label>İkon (emoji)</label>
+      <input type="text" id="cf-icon" placeholder="📚" maxlength="4">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cf-cancel">Ləğv et</button>
+      <button class="btn btn-primary" id="cf-save">💾 Yadda saxla</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="category-delete-modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>Kateqoriyanı sil</h3>
+    <p id="cd-message"></p>
+    <div class="field" id="cd-mode-field" style="display:none">
+      <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; margin-bottom:8px; cursor:pointer;">
+        <input type="radio" name="cd-mode" id="cd-mode-reassign" value="reassign" checked style="margin-top:3px;">
+        <span>Sualları başqa kateqoriyaya köçür, sonra bu kateqoriyanı sil</span>
+      </label>
+      <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; cursor:pointer;">
+        <input type="radio" name="cd-mode" id="cd-mode-cascade" value="cascade" style="margin-top:3px;">
+        <span>Bu kateqoriyanı <strong>sualları ilə birlikdə tamamilə sil</strong></span>
+      </label>
+    </div>
+    <div class="field" id="cd-reassign-field">
+      <label>Sualları hansı kateqoriyaya köçürək?</label>
+      <select id="cd-reassign-select"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="cd-cancel">Ləğv et</button>
+      <button class="btn btn-danger" id="cd-confirm">🗑️ Sil</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal-overlay" style="display:none">
+  <div class="modal">
+    <h3 id="confirm-title">Əminsiniz?</h3>
+    <p id="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="confirm-cancel">Ləğv et</button>
+      <button class="btn btn-danger" id="confirm-ok">Təsdiqlə</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Admin panelinə giriş PIN-lə qorunur — bu, #view-admin-in xaricindədir ki,
+     admin görünüşü açılmazdan ƏVVƏL göstərilə bilsin. -->
+<div id="admin-pin-overlay" style="display:none; position:fixed; inset:0; background:rgba(6,3,20,0.82); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#150f3d; border:1.5px solid rgba(160,130,255,0.35); border-radius:18px; padding:24px 20px; max-width:340px; width:100%; text-align:center; box-sizing:border-box;">
+    <div style="font-size:32px; margin-bottom:8px;">🔒</div>
+    <div style="font-weight:800; color:#ffd76a; font-size:16px; margin-bottom:6px;">Admin parolu</div>
+    <div style="color:#ab9fd9; font-size:13px; margin-bottom:16px;">Admin panelinə keçmək üçün parolu daxil edin</div>
+    <input type="password" id="admin-pin-input" inputmode="numeric" autocomplete="off" style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(160,130,255,0.35); background:#1f1856; color:#f6f3ff; font-size:16px; text-align:center; margin-bottom:8px; box-sizing:border-box;">
+    <div id="admin-pin-error" style="color:#ff4b6e; font-size:12.5px; min-height:16px; margin-bottom:10px;"></div>
+    <div style="display:flex; gap:10px;">
+      <button type="button" id="admin-pin-cancel" style="flex:1; padding:12px; border-radius:12px; border:1px solid rgba(160,130,255,0.35); background:#150f3d; color:#f6f3ff; font-weight:700;">Ləğv et</button>
+      <button type="button" id="admin-pin-submit" style="flex:1; padding:12px; border-radius:12px; border:1.5px solid #ffd76a; background:linear-gradient(180deg,#3a1e99,#1a1166); color:#ffd76a; font-weight:800;">Daxil ol</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase (compat) SDK — server sinxronizasiyası üçün, lokal olaraq qoşulub (CDN yoxdur) -->
+<script src="firebase-app-compat.js"></script>
+<script src="firebase-firestore-compat.js"></script>
+
+<!-- BilGörək — Paylaşılan Məlumat Bazası Qatı (ayrı fayl: db.js) -->
+<script src="db.js"></script>
+
+<!-- BilGörək — Canlı Otaq (Live Rooms) əlavəsi: db.js-i dəyişmədən onun üzərinə yeni funksiyalar əlavə edir -->
+<script src="liverooms.js"></script>
+
+<!-- SheetJS (xlsx) kitabxanası — admin panelinin idxal funksiyası üçün (ayrı fayl) -->
+<script src="xlsx.full.min.js"></script>
+<script>
+"use strict";
+
+/* ======================= SUAL BANKI ======================= */
+// QEYD: Suallar artıq bu statik obyektdən deyil, db.js vasitəsilə IndexedDB-dən oxunur
+// (bax: BilGorekDB, aşağıda). Bu dəyişən artıq oyun kodu tərəfindən istifadə olunmur —
+// yalnız db.js-in "seed" (başlanğıc) məlumatının haradan gəldiyinə dair referansdır.
+const QUESTION_BANK_REFERENCE_ONLY = {
+  umumi: { name: "Ümumi bilik", icon: "🧠", questions: [
+    { q: "Yer kürəsinin təxminən neçə faizi su ilə örtülüdür?", options: ["50%", "70%", "85%", "30%"], correct: 1 },
+    { q: "Yetkin insan bədənində neçə sümük var?", options: ["186", "206", "226", "246"], correct: 1 },
+    { q: "Bal arısının neçə qanadı var?", options: ["2", "4", "6", "8"], correct: 1 },
+    { q: "Ən böyük məməli heyvan hansıdır?", options: ["Fil", "Mavi balina", "Jiraf", "Kaşalot"], correct: 1 },
+    { q: "Bir sutkada neçə saat var?", options: ["12", "24", "36", "48"], correct: 1 },
+    { q: "İnsan bədəninin ən böyük orqanı hansıdır?", options: ["Qaraciyər", "Beyin", "Dəri", "Ağciyər"], correct: 2 },
+    { q: "Şahmat lövhəsində cəmi neçə xana var?", options: ["32", "48", "64", "72"], correct: 2 },
+    { q: "Adi (uzun olmayan) il neçə gündən ibarətdir?", options: ["360", "364", "365", "366"], correct: 2 },
+    { q: "Ən sürətli quş hansıdır (şığıma zamanı)?", options: ["Qartal", "Şahin (sapsan)", "Bayquş", "Qu quşu"], correct: 1 },
+    { q: "Bir həftədə neçə gün var?", options: ["5", "6", "7", "8"], correct: 2 },
+    { q: "İnsanda əsas neçə duyğu növü var (görmə, eşitmə və s.)?", options: ["3", "4", "5", "6"], correct: 2 },
+    { q: "Hansı heyvan quruda ən sürətli qaçır?", options: ["Aslan", "Gepard (çita)", "At", "Cüyür"], correct: 1 }
+  ]},
+  azerbaycan: { name: "Azərbaycan", icon: "🇦🇿", questions: [
+    { q: "Azərbaycanın paytaxtı hansı şəhərdir?", options: ["Gəncə", "Sumqayıt", "Bakı", "Naxçıvan"], correct: 2 },
+    { q: "Azərbaycan bayrağında neçə rəng var?", options: ["2", "3", "4", "5"], correct: 1 },
+    { q: "Azərbaycanın milli valyutası necə adlanır?", options: ["Manat", "Tümən", "Lira", "Dinar"], correct: 0 },
+    { q: "Azərbaycan Respublikasının Dövlət Himninin sözlərinin müəllifi kimdir?", options: ["Səməd Vurğun", "Əhməd Cavad", "Hüseyn Cavid", "Bəxtiyar Vahabzadə"], correct: 1 },
+    { q: "Azərbaycanın rəmzi çiçəyi hansıdır?", options: ["Lalə", "Qərənfil", "Xarı bülbül", "Bənövşə"], correct: 2 },
+    { q: "Azərbaycan hansı ildə müstəqilliyini bərpa edib?", options: ["1989", "1990", "1991", "1993"], correct: 2 },
+    { q: "Azərbaycan Xalq Cümhuriyyəti hansı ildə qurulub?", options: ["1916", "1918", "1920", "1922"], correct: 1 },
+    { q: "\"Odlar Yurdu\" kimi tanınan ölkə hansıdır?", options: ["Gürcüstan", "Ermənistan", "Azərbaycan", "İran"], correct: 2 },
+    { q: "Azərbaycanın sahilində yerləşdiyi su hövzəsi hansıdır?", options: ["Qara dəniz", "Aralıq dənizi", "Xəzər dənizi", "Ərəb dənizi"], correct: 2 },
+    { q: "Naxçıvan Azərbaycanın hansı statusa malik əraziyə malikdir?", options: ["Vilayət", "Muxtar Respublika", "Federal bölgə", "Ştat"], correct: 1 },
+    { q: "\"Ulu Öndər\" kimi tanınan Azərbaycan siyasətçisi kim olub?", options: ["Əbülfəz Elçibəy", "Heydər Əliyev", "Nəriman Nərimanov", "Məmməd Əmin Rəsulzadə"], correct: 1 },
+    { q: "Qarabağ bölgəsi Azərbaycanın hansı hissəsində yerləşir?", options: ["Şimalında", "Şərqində", "Qərbində", "Mərkəzində"], correct: 2 }
+  ]},
+  tarix: { name: "Tarix", icon: "📜", questions: [
+    { q: "Birinci Dünya Müharibəsi hansı ildə başlayıb?", options: ["1912", "1914", "1916", "1918"], correct: 1 },
+    { q: "İkinci Dünya Müharibəsi hansı ildə bitib?", options: ["1943", "1944", "1945", "1946"], correct: 2 },
+    { q: "Qədim Misir piramidaları əsasən nə üçün tikilirdi?", options: ["Məbəd kimi", "Firon məzarı kimi", "Anbar kimi", "Qala kimi"], correct: 1 },
+    { q: "Roma İmperiyası hansı qitədə yaranmışdır?", options: ["Asiya", "Afrika", "Avropa", "Amerika"], correct: 2 },
+    { q: "Böyük İpək Yolu hansı qitələri birləşdirirdi?", options: ["Avropa və Amerika", "Asiya və Avropa", "Afrika və Asiya", "Avstraliya və Asiya"], correct: 1 },
+    { q: "Nizami Gəncəvi hansı əsrdə yaşayıb?", options: ["X əsr", "XII əsr", "XV əsr", "XVIII əsr"], correct: 1 },
+    { q: "\"Kitabi-Dədə Qorqud\" hansı xalqa məxsus dastandır?", options: ["Fars", "Oğuz türkləri", "Ərəb", "Yunan"], correct: 1 },
+    { q: "Fransa İnqilabı hansı əsrdə baş verib?", options: ["XVI əsr", "XVII əsr", "XVIII əsr", "XIX əsr"], correct: 2 },
+    { q: "Amerika qitəsini Avropalılar üçün kəşf edən kim olub (rəsmi tarixə görə)?", options: ["Ferdinand Magellan", "Kristofor Kolumb", "Vasko da Qama", "Marko Polo"], correct: 1 },
+    { q: "İlk yazını (mixi yazı) yaradan qədim sivilizasiya hansıdır?", options: ["Şumerlər", "Misirlilər", "Finikiyalılar", "Aztəklər"], correct: 0 },
+    { q: "Berlin divarı hansı ildə uçurulub?", options: ["1985", "1987", "1989", "1991"], correct: 2 },
+    { q: "Şah İsmayıl Xətai hansı dövləti qurmuşdur?", options: ["Qaraqoyunlu", "Səfəvi", "Osmanlı", "Əfşar"], correct: 1 }
+  ]},
+  cografiya: { name: "Coğrafiya", icon: "🌍", questions: [
+    { q: "Dünyanın ən hündür dağı hansıdır?", options: ["Kilimancaro", "Elbrus", "Everest", "K2"], correct: 2 },
+    { q: "Dünyanın ən böyük səhrası hansıdır (Antarktida çıxılmaqla)?", options: ["Qobi", "Sahara", "Kalahari", "Atakama"], correct: 1 },
+    { q: "Dünyanın ən böyük qitəsi hansıdır?", options: ["Afrika", "Amerika", "Asiya", "Avropa"], correct: 2 },
+    { q: "Dünyanın ən kiçik qitəsi hansıdır?", options: ["Avropa", "Avstraliya", "Antarktida", "Cənubi Amerika"], correct: 1 },
+    { q: "Avropanın ən uzun çayı hansıdır?", options: ["Dunay", "Volqa", "Reyn", "Elba"], correct: 1 },
+    { q: "Dünyanın ən böyük adası hansıdır?", options: ["Madaqaskar", "Borneo", "Qrenlandiya", "Yeni Qvineya"], correct: 2 },
+    { q: "Ekvator Yer kürəsini neçə əsas yarımkürəyə bölür?", options: ["2", "3", "4", "5"], correct: 0 },
+    { q: "Ən çox ölkə ilə həmsərhəd olan ölkələrdən biri hansıdır?", options: ["Yaponiya", "Rusiya", "İslandiya", "Yeni Zelandiya"], correct: 1 },
+    { q: "Yaponiya hansı qitədə yerləşir?", options: ["Avropa", "Asiya", "Afrika", "Okeaniya"], correct: 1 },
+    { q: "Dünyanın ən böyük okeanı hansıdır?", options: ["Atlantik", "Sakit (Tinc)", "Hind", "Şimal Buzlu"], correct: 1 },
+    { q: "Kilimanjaro dağı hansı qitədədir?", options: ["Asiya", "Cənubi Amerika", "Afrika", "Avropa"], correct: 2 },
+    { q: "Dünyanın ən uzun çayı hansıdır?", options: ["Amazon", "Nil", "Yanszı", "Missisipi"], correct: 1 }
+  ]},
+  elm: { name: "Elm və texnologiya", icon: "🔬", questions: [
+    { q: "Suyun kimyəvi formulu nədir?", options: ["CO2", "H2O", "O2", "NaCl"], correct: 1 },
+    { q: "İşıq sürəti təqribən neçə km/saniyədir?", options: ["150,000", "300,000", "450,000", "600,000"], correct: 1 },
+    { q: "Fotosintez zamanı bitkilər hansı qazı udur?", options: ["Oksigen", "Azot", "Karbon qazı (CO2)", "Hidrogen"], correct: 2 },
+    { q: "DNT-nin tam adı nədir?", options: ["Dezoksiribonuklein turşusu", "Ribonuklein turşusu", "Amin turşusu", "Nuklein zülalı"], correct: 0 },
+    { q: "\"Fe\" hansı kimyəvi elementin simvoludur?", options: ["Flüor", "Dəmir", "Fosfor", "Fransium"], correct: 1 },
+    { q: "İnsan bədənində qanı hansı orqan vurur (nasos kimi)?", options: ["Böyrək", "Ağciyər", "Ürək", "Qaraciyər"], correct: 2 },
+    { q: "Ən yüngül qaz hansıdır?", options: ["Helium", "Hidrogen", "Azot", "Oksigen"], correct: 1 },
+    { q: "İlk proqramlaşdırıla bilən kompüterlər təxminən hansı onilliyə aiddir?", options: ["1920-ci illər", "1940-cı illər", "1960-cı illər", "1980-ci illər"], correct: 1 },
+    { q: "İnternetin əsasını qoyan ilk şəbəkə necə adlanırdı?", options: ["ARPANET", "Ethernet", "TCPNET", "WWWNET"], correct: 0 },
+    { q: "Ən çox istifadə olunan mobil əməliyyat sistemlərindən biri hansıdır?", options: ["Windows", "Android", "Linux", "MS-DOS"], correct: 1 },
+    { q: "Atomun mərkəzində nə yerləşir?", options: ["Elektron", "Nüvə (proton və neytron)", "İon", "Molekul"], correct: 1 },
+    { q: "Elektrik cərəyanının gücü hansı vahidlə ölçülür?", options: ["Volt", "Amper", "Om", "Vatt"], correct: 1 }
+  ]},
+  idman: { name: "İdman", icon: "⚽", questions: [
+    { q: "Futbol matçı normal vəziyyətdə neçə dəqiqə davam edir?", options: ["80", "90", "100", "120"], correct: 1 },
+    { q: "Olimpiya Oyunları neçə ildən bir keçirilir?", options: ["2", "3", "4", "5"], correct: 2 },
+    { q: "Bir basketbol komandasında meydançada eyni anda neçə oyunçu olur?", options: ["4", "5", "6", "7"], correct: 1 },
+    { q: "Formula 1 nə növ idman sayılır?", options: ["Motosiklet yarışı", "Avtomobil yarışı", "Velosiped yarışı", "Qayıq yarışı"], correct: 1 },
+    { q: "Voleybolda bir set adətən neçə xala qədər oynanılır?", options: ["15", "21", "25", "30"], correct: 2 },
+    { q: "FIFA Dünya Çempionatı neçə ildən bir keçirilir?", options: ["2", "3", "4", "5"], correct: 2 },
+    { q: "Boksda döyüşçülər hansı ilə vurur?", options: ["Ayaqla", "Əllərlə (əlcəklə)", "Başla", "Dirsəklə"], correct: 1 },
+    { q: "Tennisdə \"Grand Slam\" turnirlərindən biri hansıdır?", options: ["Uimbldon", "Çempionlar Liqası", "Superkubok", "Milli Liqa"], correct: 0 },
+    { q: "Milli Azərbaycan güləş növü necə adlanır?", options: ["Sumo", "Gülləş (Azərbaycan güləşi)", "Cüdo", "Karate"], correct: 1 },
+    { q: "Şahmatda başlanğıcda hər tərəfdə neçə piyada olur?", options: ["6", "8", "10", "12"], correct: 1 },
+    { q: "Bir marafon məsafəsi təqribən neçə kilometrdir?", options: ["21", "32", "42", "50"], correct: 2 },
+    { q: "Hansı idman növündə \"nokaut\" termini istifadə olunur?", options: ["Güləş", "Boks", "Cüdo", "Tennis"], correct: 1 }
+  ]},
+  edebiyyat: { name: "Ədəbiyyat və incəsənət", icon: "📖", questions: [
+    { q: "\"Mona Liza\" əsərinin müəllifi kimdir?", options: ["Mikelancelo", "Leonardo da Vinçi", "Rafael", "Rembrandt"], correct: 1 },
+    { q: "Üzeyir Hacıbəyov hansı sənətlə tanınır?", options: ["Rəssamlıq", "Bəstəkarlıq", "Memarlıq", "Heykəltəraşlıq"], correct: 1 },
+    { q: "\"Leyli və Məcnun\" mövzusunu klassik Şərq ədəbiyyatında ilk poema şəklində kim yazıb?", options: ["Füzuli", "Nizami Gəncəvi", "Xaqani Şirvani", "Nəsimi"], correct: 1 },
+    { q: "\"Harry Potter\" kitab seriyasının müəllifi kimdir?", options: ["J.R.R. Tolkien", "J.K. Rowling", "Stephen King", "C.S. Lewis"], correct: 1 },
+    { q: "Opera janrı ilk dəfə hansı ölkədə yaranıb?", options: ["Fransa", "Almaniya", "İtaliya", "İspaniya"], correct: 2 },
+    { q: "Fortepiano hansı qrupa aid musiqi alətidir?", options: ["Nəfəs", "Simli-klaviaturalı", "Zərb", "Xor"], correct: 1 },
+    { q: "Caz musiqisi hansı ölkədə yaranıb?", options: ["Fransa", "ABŞ", "Braziliya", "Kuba"], correct: 1 },
+    { q: "Molla Pənah Vaqif hansı sahədə tanınmışdır?", options: ["Rəssamlıq", "Şairlik (poeziya)", "Memarlıq", "Musiqi"], correct: 1 },
+    { q: "Rəssamlıqda \"portret\" janrı əsasən nəyi təsvir edir?", options: ["Təbiəti", "İnsan simasını", "Heyvanları", "Memarlığı"], correct: 1 },
+    { q: "\"Kitabi-Dədə Qorqud\" hansı ədəbi janra aiddir?", options: ["Roman", "Dastan", "Poema", "Pyes"], correct: 1 },
+    { q: "Cəfər Cabbarlı Azərbaycan ədəbiyyatında hansı sahədə tanınıb?", options: ["Dramaturgiya", "Heykəltəraşlıq", "Kinorejissorluq", "Rəqqaslıq"], correct: 0 },
+    { q: "Heykəltəraşlıq hansı sənət növünə aiddir?", options: ["Musiqi sənəti", "Təsviri sənət", "Ədəbiyyat", "Teatr"], correct: 1 }
+  ]}
+};
+
+// getAllQuestions() artıq lazım deyil — bax: BilGorekDB.getAllActiveQuestions() (db.js)
+
+/* ======================= SƏS EFFEKTLƏRİ (Web Audio API) ======================= */
+let audioCtx = null;
+let soundEnabled = (localStorage.getItem("bilgorekSound") !== "0");
+
+function ensureAudio() {
+  if (!audioCtx) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    } catch (e) { audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+}
+
+function playTone(freq, dur, type, vol, delay) {
+  if (!soundEnabled || !audioCtx) return;
+  type = type || "sine";
+  vol = vol === undefined ? 0.12 : vol;
+  delay = delay || 0;
+  try {
+    const t0 = audioCtx.currentTime + delay;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(vol, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.03);
+  } catch (e) { /* səssiz keç */ }
+}
+
+function soundClick() { ensureAudio(); playTone(680, 0.06, "square", 0.06); }
+function soundCorrect() { ensureAudio(); playTone(523.25, 0.13, "sine", 0.13); playTone(659.25, 0.16, "sine", 0.13, 0.11); playTone(783.99, 0.2, "sine", 0.1, 0.22); }
+function soundWrong() { ensureAudio(); playTone(180, 0.32, "sawtooth", 0.1); playTone(120, 0.35, "sawtooth", 0.08, 0.08); }
+function soundTimeout() { soundWrong(); }
+function soundFanfare(good) {
+  ensureAudio();
+  if (good) {
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => playTone(f, 0.22, "triangle", 0.11, i * 0.13));
+  } else {
+    playTone(330, 0.25, "triangle", 0.1);
+    playTone(261.6, 0.35, "triangle", 0.1, 0.18);
+  }
+}
+
+/* ======================= OYUN SABİTLƏRİ =======================
+   Bunlar YALNIZ ehtiyat (fallback) dəyərlərdir — DB açılmasa belə oyun işləsin deyə.
+   Əsl dəyərlər hər oyun başlayanda BilGorekDB.getGameParams() ilə DB-dən oxunur
+   (admin panelində dəyişdirilə bilər) və state.gameParams-da saxlanılır. */
+const FALLBACK_GAME_PARAMS = { questionsPerRound: 10, timePerQuestion: 20, basePoints: 100, timeBonusPerSec: 6 };
+const STORAGE_NAME = "bilgorekPlayerName";
+const STORAGE_SOUND = "bilgorekSound";
+
+/* ======================= DOM ======================= */
+const el = {
+  topBar: document.getElementById("top-bar"),
+  btnSound: document.getElementById("btn-sound"),
+  playerNameInput: document.getElementById("player-name"),
+  btnPlay: document.getElementById("btn-play"),
+  categoryGrid: document.getElementById("category-grid"),
+  btnLeaderboard: document.getElementById("btn-leaderboard"),
+  btnRules: document.getElementById("btn-rules"),
+  btnRulesBack: document.getElementById("btn-rules-back"),
+  btnLeaderboardBack: document.getElementById("btn-leaderboard-back"),
+  leaderboardList: document.getElementById("leaderboard-list"),
+  btnQuit: document.getElementById("btn-quit"),
+  gamePlayerName: document.getElementById("game-player-name"),
+  timerPill: document.getElementById("timer-pill"),
+  currentScore: document.getElementById("current-score"),
+  questionProgress: document.getElementById("question-progress"),
+  qCategoryIcon: document.getElementById("q-category-icon"),
+  qCounter: document.getElementById("q-counter"),
+  questionText: document.getElementById("question-text"),
+  optionsGrid: document.getElementById("options-grid"),
+  hintBtn: document.getElementById("btn-hint"),
+  hintBox: document.getElementById("hint-box"),
+  explanationBox: document.getElementById("explanation-box"),
+  resultEmoji: document.getElementById("result-emoji"),
+  resultTitle: document.getElementById("result-title"),
+  resultName: document.getElementById("result-name"),
+  resultScore: document.getElementById("result-score"),
+  resultCorrect: document.getElementById("result-correct"),
+  resultCategory: document.getElementById("result-category"),
+  newRecordBadge: document.getElementById("new-record-badge"),
+  btnPlayAgain: document.getElementById("btn-play-again"),
+  btnToHome: document.getElementById("btn-to-home")
+};
+
+const screens = {
+  home: document.getElementById("screen-home"),
+  rules: document.getElementById("screen-rules"),
+  leaderboard: document.getElementById("screen-leaderboard"),
+  game: document.getElementById("screen-game"),
+  result: document.getElementById("screen-result"),
+  "team-setup": document.getElementById("screen-team-setup"),
+  "team-turn": document.getElementById("screen-team-turn"),
+  "team-game": document.getElementById("screen-team-game"),
+  "team-result": document.getElementById("screen-team-result"),
+  "live-entry": document.getElementById("screen-live-entry"),
+  "live-host-setup": document.getElementById("screen-live-host-setup"),
+  "live-join": document.getElementById("screen-live-join"),
+  "live-lobby": document.getElementById("screen-live-lobby"),
+  "live-question": document.getElementById("screen-live-question"),
+  "live-waiting": document.getElementById("screen-live-waiting"),
+  "live-host-control": document.getElementById("screen-live-host-control"),
+  "live-result": document.getElementById("screen-live-result")
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+  el.topBar.classList.toggle("show-title", name !== "home");
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ======================= AD / SƏS ======================= */
+function getPlayerName() { return (localStorage.getItem(STORAGE_NAME) || "").trim(); }
+function setPlayerName(name) { localStorage.setItem(STORAGE_NAME, name); }
+
+function initName() {
+  const saved = getPlayerName();
+  if (saved) el.playerNameInput.value = saved;
+}
+
+function validateNameOrShake() {
+  const name = el.playerNameInput.value.trim();
+  if (!name) {
+    el.playerNameInput.classList.remove("shake");
+    void el.playerNameInput.offsetWidth;
+    el.playerNameInput.classList.add("shake");
+    el.playerNameInput.focus();
+    return null;
+  }
+  setPlayerName(name);
+  return name;
+}
+
+function updateSoundIcon() {
+  el.btnSound.textContent = soundEnabled ? "🔊" : "🔇";
+  el.btnSound.classList.toggle("sound-off", !soundEnabled);
+}
+
+el.btnSound.addEventListener("click", () => {
+  ensureAudio();
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(STORAGE_SOUND, soundEnabled ? "1" : "0");
+  updateSoundIcon();
+  if (soundEnabled) soundClick();
+});
+
+/* ======================= KATEQORİYALAR ======================= */
+let categoriesCache = [];
+let categoriesByKeyCache = {};
+
+async function refreshCategoriesCache() {
+  categoriesCache = await BilGorekDB.getCategories();
+  categoriesByKeyCache = {};
+  categoriesCache.forEach(c => { categoriesByKeyCache[c.key] = c; });
+  return categoriesCache;
+}
+
+async function renderCategories() {
+  el.categoryGrid.innerHTML = `<div class="loading-msg">Yüklənir...</div>`;
+  const cats = await refreshCategoriesCache();
+  el.categoryGrid.innerHTML = "";
+  if (cats.length === 0) {
+    el.categoryGrid.innerHTML = `<div class="loading-msg">Hələ kateqoriya yoxdur.</div>`;
+    return;
+  }
+  cats.forEach(cat => {
+    const card = document.createElement("div");
+    card.className = "category-card";
+    card.innerHTML = `<span class="cat-icon">${cat.icon}</span><span class="cat-name">${escapeHtml(cat.name)}</span>`;
+    card.addEventListener("click", async () => {
+      soundClick();
+      const name = validateNameOrShake();
+      if (!name) return;
+      await startGame(cat.key, name);
+    });
+    el.categoryGrid.appendChild(card);
+  });
+}
+
+/* ======================= LEADERBOARD (IndexedDB) ======================= */
+async function renderLeaderboard() {
+  el.leaderboardList.innerHTML = `<div class="loading-msg">Yüklənir...</div>`;
+  const list = await BilGorekDB.getLeaderboard();
+  el.leaderboardList.innerHTML = "";
+  if (list.length === 0) {
+    el.leaderboardList.innerHTML = `<div class="lb-empty">Hələ heç bir nəticə yoxdur.<br>İlk nəticəni sən yarat! 🚀</div>`;
+    return;
+  }
+  list.forEach((entry, i) => {
+    const row = document.createElement("div");
+    row.className = "lb-row" + (i === 0 ? " top1" : "");
+    row.innerHTML = `
+      <div class="lb-rank">${i + 1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${escapeHtml(entry.name)}</div>
+        <div class="lb-meta">${escapeHtml(entry.categoryName)} · ${entry.correct}/10 doğru</div>
+      </div>
+      <div class="lb-score">${entry.score}</div>
+    `;
+    el.leaderboardList.appendChild(row);
+  });
+}
+
+/* ======================= BİLDİRİŞ (TOAST) ======================= */
+let toastTimer = null;
+function showToast(msg) {
+  let toastEl = document.getElementById("toast");
+  if (!toastEl) {
+    toastEl = document.createElement("div");
+    toastEl.id = "toast";
+    toastEl.className = "toast";
+    document.body.appendChild(toastEl);
+  }
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+}
+
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ======================= OYUN ======================= */
+let state = null;
+let timerInterval = null;
+
+async function startGame(categoryKey, playerName) {
+  const cats = categoriesCache.length ? categoriesCache : await refreshCategoriesCache();
+  const catsByKey = categoriesByKeyCache;
+  const gameParams = await BilGorekDB.getGameParams().catch(() => FALLBACK_GAME_PARAMS);
+
+  let rows;
+  let roundCategoryName;
+  if (categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+    roundCategoryName = "Qarışıq";
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(categoryKey);
+    roundCategoryName = (catsByKey[categoryKey] && catsByKey[categoryKey].name) || categoryKey;
+  }
+
+  if (!rows || rows.length === 0) {
+    showToast("Bu kateqoriyada hazırda aktiv sual yoxdur.");
+    return;
+  }
+
+  const pool = rows.map(r => BilGorekDB.rowToGameQuestion(r, catsByKey));
+  const questionsPerRound = gameParams.questionsPerRound || FALLBACK_GAME_PARAMS.questionsPerRound;
+  const roundQuestions = shuffle(pool).slice(0, Math.min(questionsPerRound, pool.length));
+
+  state = {
+    playerName: playerName,
+    categoryKey: categoryKey,
+    categoryName: roundCategoryName,
+    questions: roundQuestions,
+    index: 0,
+    score: 0,
+    correctCount: 0,
+    gameParams: gameParams,
+    timeLeft: gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion,
+    answered: false,
+    history: []
+  };
+
+  el.gamePlayerName.textContent = playerName;
+  showScreen("game");
+  updateScoreDisplay();
+  renderQuestion();
+}
+
+function updateScoreDisplay() { el.currentScore.textContent = state.score; }
+
+function renderQuestion() {
+  state.answered = false;
+  const timePerQuestion = state.gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion;
+  state.timeLeft = timePerQuestion;
+  const q = state.questions[state.index];
+
+  el.qCategoryIcon.textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  el.qCounter.textContent = `Sual ${state.index + 1}/${state.questions.length}`;
+  el.questionText.textContent = q.q;
+
+  const progressPct = (state.index / state.questions.length) * 100;
+  el.questionProgress.style.width = progressPct + "%";
+
+  if (el.hintBtn) {
+    if (q.hint) {
+      el.hintBtn.style.display = "";
+      el.hintBtn.textContent = "💡 İpucu göstər";
+      el.hintBtn.dataset.hint = q.hint;
+    } else {
+      el.hintBtn.style.display = "none";
+    }
+  }
+  if (el.hintBox) { el.hintBox.style.display = "none"; el.hintBox.textContent = ""; }
+  if (el.explanationBox) { el.explanationBox.style.display = "none"; el.explanationBox.textContent = ""; }
+
+  const letters = ["A", "B", "C", "D"];
+  const shuffledOptions = shuffle(q.options.map((text, i) => ({ text, isCorrect: i === q.correct })));
+
+  el.optionsGrid.innerHTML = "";
+  const correctOptText = (shuffledOptions.find(o => o.isCorrect) || {}).text || "";
+  state.currentCorrectText = correctOptText;
+  shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.dataset.correct = opt.isCorrect ? "true" : "false";
+    btn.innerHTML = `<span class="opt-letter"><span>${letters[i]}</span></span><span>${escapeHtml(opt.text)}</span>`;
+    btn.addEventListener("click", () => handleAnswer(btn, opt.isCorrect, opt.text, correctOptText));
+    el.optionsGrid.appendChild(btn);
+  });
+
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  const timePerQuestion = state.gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion;
+  let remaining = timePerQuestion;
+  el.timerPill.textContent = remaining;
+  el.timerPill.classList.remove("urgent");
+
+  timerInterval = setInterval(() => {
+    remaining -= 1;
+    state.timeLeft = remaining;
+    el.timerPill.textContent = Math.max(0, remaining);
+    if (remaining <= 5) el.timerPill.classList.add("urgent");
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      if (!state.answered) handleTimeout();
+    }
+  }, 1000);
+}
+
+function handleTimeout() {
+  if (state.answered) return;
+  state.answered = true;
+  soundTimeout();
+  revealCorrect();
+  const q = state.questions[state.index];
+  state.history.push({
+    index: state.index,
+    question: q.q,
+    categoryName: q.categoryName || "",
+    chosenText: null,
+    correctText: state.currentCorrectText || "",
+    isCorrect: false
+  });
+  advanceAfterDelay();
+}
+
+function handleAnswer(btn, isCorrect, chosenText, correctText) {
+  if (state.answered) return;
+  state.answered = true;
+  clearInterval(timerInterval);
+  revealCorrect();
+
+  if (isCorrect) {
+    soundCorrect();
+    const basePoints = state.gameParams.basePoints || FALLBACK_GAME_PARAMS.basePoints;
+    const timeBonusPerSec = state.gameParams.timeBonusPerSec || FALLBACK_GAME_PARAMS.timeBonusPerSec;
+    const timeBonus = Math.max(0, state.timeLeft) * timeBonusPerSec;
+    state.score += basePoints + timeBonus;
+    state.correctCount += 1;
+    updateScoreDisplay();
+  } else {
+    soundWrong();
+    btn.classList.add("wrong");
+  }
+
+  const q = state.questions[state.index];
+  state.history.push({
+    index: state.index,
+    question: q.q,
+    categoryName: q.categoryName || "",
+    chosenText: chosenText != null ? chosenText : null,
+    correctText: correctText || state.currentCorrectText || "",
+    isCorrect: !!isCorrect
+  });
+
+  advanceAfterDelay();
+}
+
+function revealCorrect() {
+  const buttons = Array.from(el.optionsGrid.children);
+  buttons.forEach(b => {
+    b.classList.add("disabled");
+    if (b.dataset.correct === "true") b.classList.add("correct");
+  });
+  const q = state.questions[state.index];
+  if (q.explanation && el.explanationBox) {
+    el.explanationBox.textContent = "💬 " + q.explanation;
+    el.explanationBox.style.display = "block";
+  }
+  if (el.hintBox) el.hintBox.style.display = "none";
+  if (el.hintBtn) el.hintBtn.style.display = "none";
+}
+
+function advanceAfterDelay() {
+  const q = state.questions[state.index];
+  const delay = (q.explanation) ? 2600 : 1300;
+  setTimeout(() => {
+    state.index += 1;
+    if (state.index >= state.questions.length) {
+      endGame();
+    } else {
+      renderQuestion();
+    }
+  }, delay);
+}
+
+async function endGame() {
+  clearInterval(timerInterval);
+
+  const entry = {
+    name: state.playerName,
+    score: state.score,
+    correct: state.correctCount,
+    categoryName: state.categoryName,
+    date: new Date().toISOString()
+  };
+  const newRecord = await BilGorekDB.isNewRecord(state.score);
+  await BilGorekDB.addLeaderboardEntry(entry);
+
+  el.resultName.textContent = state.playerName;
+  el.resultScore.textContent = state.score;
+  el.resultCorrect.textContent = `${state.correctCount}/${state.questions.length}`;
+  el.resultCategory.textContent = state.categoryName;
+  el.newRecordBadge.style.display = newRecord ? "block" : "none";
+
+  const ratio = state.correctCount / state.questions.length;
+  if (ratio >= 0.8) {
+    el.resultEmoji.textContent = "🏆";
+    el.resultTitle.textContent = "Əla nəticə!";
+    soundFanfare(true);
+  } else if (ratio >= 0.5) {
+    el.resultEmoji.textContent = "👍";
+    el.resultTitle.textContent = "Yaxşı nəticə!";
+    soundFanfare(true);
+  } else {
+    el.resultEmoji.textContent = "💪";
+    el.resultTitle.textContent = "Bir də cəhd et!";
+    soundFanfare(false);
+  }
+
+  showScreen("result");
+}
+
+function escapeHtmlReport(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+const AZ_MONTHS_REPORT = ["yanvar","fevral","mart","aprel","may","iyun","iyul","avqust","sentyabr","oktyabr","noyabr","dekabr"];
+
+function buildReportHtml() {
+  const now = new Date();
+  const dateStr = `${now.getDate()} ${AZ_MONTHS_REPORT[now.getMonth()]} ${now.getFullYear()}`;
+  const timeStr = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  const total = state.questions.length;
+  const correct = state.correctCount;
+  const wrong = total - correct;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  const rows = state.history.slice().sort((a, b) => a.index - b.index).map((h, i) => {
+    const chosen = h.chosenText != null ? escapeHtmlReport(h.chosenText) : "<em>(cavab verilmədi)</em>";
+    const cls = h.isCorrect ? "ok" : "bad";
+    const mark = h.isCorrect ? "✅" : "❌";
+    return `<tr class="${cls}">
+      <td>${i + 1}</td>
+      <td>${escapeHtmlReport(h.question)}</td>
+      <td>${chosen}</td>
+      <td>${escapeHtmlReport(h.correctText)}</td>
+      <td class="mark">${mark}</td>
+    </tr>`;
+  }).join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<title>BilGörək — Nəticə Hesabatı — ${escapeHtmlReport(state.playerName)}</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 24px; color: #1f2430; background: #fff; }
+  .report-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #6c5ce7; padding-bottom: 14px; margin-bottom: 18px; }
+  .report-header h1 { font-size: 22px; margin: 0; color: #6c5ce7; }
+  .report-header .meta { text-align: right; font-size: 13px; color: #666; }
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; margin-bottom: 20px; font-size: 15px; }
+  .info-grid .label { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  .info-grid .value { font-weight: 600; font-size: 17px; }
+  .summary-bar { display: flex; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+  .summary-chip { flex: 1; min-width: 110px; background: #f4f2ff; border-radius: 10px; padding: 10px 14px; text-align: center; }
+  .summary-chip.good { background: #e7f9ee; }
+  .summary-chip.bad { background: #fdecec; }
+  .summary-chip .num { font-size: 22px; font-weight: 700; display: block; }
+  .summary-chip .lbl { font-size: 12px; color: #555; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { border: 1px solid #e0e0e5; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #6c5ce7; color: #fff; font-weight: 600; }
+  tr.ok td.mark { color: #1a9c53; font-weight: 700; }
+  tr.bad td.mark { color: #e0463f; font-weight: 700; }
+  tr.bad { background: #fff7f6; }
+  td.mark { text-align: center; width: 40px; }
+  .footer-note { margin-top: 22px; font-size: 12px; color: #888; text-align: center; }
+  .print-btn { margin: 0 0 18px; padding: 10px 18px; background: #6c5ce7; color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+  @media print { .print-btn { display: none; } body { padding: 8px; } }
+</style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">🖨️ Çap et / PDF kimi saxla</button>
+  <div class="report-header">
+    <h1>🎯 BilGörək — Nəticə Hesabatı</h1>
+    <div class="meta">${dateStr}, ${timeStr}</div>
+  </div>
+  <div class="info-grid">
+    <div><div class="label">Şagird</div><div class="value">${escapeHtmlReport(state.playerName)}</div></div>
+    <div><div class="label">Kateqoriya</div><div class="value">${escapeHtmlReport(state.categoryName)}</div></div>
+  </div>
+  <div class="summary-bar">
+    <div class="summary-chip good"><span class="num">${correct}</span><span class="lbl">Doğru cavab</span></div>
+    <div class="summary-chip bad"><span class="num">${wrong}</span><span class="lbl">Səhv cavab</span></div>
+    <div class="summary-chip"><span class="num">${pct}%</span><span class="lbl">Nəticə</span></div>
+    <div class="summary-chip"><span class="num">${state.score}</span><span class="lbl">Xal</span></div>
+  </div>
+  <table>
+    <thead><tr><th>№</th><th>Sual</th><th>Şagirdin cavabı</th><th>Düzgün cavab</th><th>Nəticə</th></tr></thead>
+    <tbody>
+${rows}
+    </tbody>
+  </table>
+  <p class="footer-note">BilGörək tətbiqi tərəfindən avtomatik yaradılmış hesabatdır.</p>
+</body>
+</html>`;
+}
+
+function downloadReport() {
+  if (!state || !state.history || !state.history.length) {
+    showToast("Hesabat üçün məlumat tapılmadı.");
+    return;
+  }
+  const html = buildReportHtml();
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const safeName = (state.playerName || "sagird").replace(/[^\p{L}\p{N}_-]+/gu, "-").slice(0, 40);
+  const dateTag = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `BilGorek-hesabat-${safeName}-${dateTag}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  showToast("Hesabat yükləndi.");
+}
+
+if (document.getElementById("btn-download-report")) {
+  document.getElementById("btn-download-report").addEventListener("click", () => {
+    soundClick();
+    downloadReport();
+  });
+}
+
+if (document.getElementById("btn-hint")) {
+  document.getElementById("btn-hint").addEventListener("click", (e) => {
+    soundClick();
+    el.hintBox.textContent = "💡 " + e.target.dataset.hint;
+    el.hintBox.style.display = "block";
+  });
+}
+
+/* ======================= NAVİQASİYA ======================= */
+el.btnPlay.addEventListener("click", () => {
+  soundClick();
+  const name = validateNameOrShake();
+  if (!name) return;
+  startGame("mixed", name);
+});
+
+el.btnLeaderboard.addEventListener("click", () => {
+  soundClick();
+  renderLeaderboard();
+  showScreen("leaderboard");
+});
+el.btnLeaderboardBack.addEventListener("click", () => { soundClick(); showScreen("home"); });
+
+el.btnRules.addEventListener("click", () => { soundClick(); showScreen("rules"); });
+el.btnRulesBack.addEventListener("click", () => { soundClick(); showScreen("home"); });
+
+el.btnQuit.addEventListener("click", () => {
+  soundClick();
+  clearInterval(timerInterval);
+  showScreen("home");
+});
+
+el.btnPlayAgain.addEventListener("click", () => {
+  soundClick();
+  const name = getPlayerName() || state.playerName;
+  startGame(state.categoryKey || "mixed", name);
+});
+
+el.btnToHome.addEventListener("click", () => { soundClick(); showScreen("home"); });
+
+el.playerNameInput.addEventListener("input", () => {
+  el.playerNameInput.classList.remove("shake");
+});
+el.playerNameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { el.btnPlay.click(); }
+});
+
+/* ======================= ADMİN PANELİNƏ KEÇİD ======================= */
+// Admin paneli (admin.html-in tərkibi) artıq bu faylın öz içindədir — ayrı
+// fayl açmağa ehtiyac yoxdur, ona görə də hər ikisi HƏMİŞƏ eyni məlumat
+// bazasını (IndexedDB və ya onun ehtiyat variantını) görür.
+const viewAdminEl = document.getElementById("view-admin");
+const appRootEl = document.getElementById("app");
+const stageRaysEl = document.querySelector(".stage-rays");
+
+function openAdminView() {
+  soundClick();
+  if (appRootEl) appRootEl.style.display = "none";
+  if (viewAdminEl) viewAdminEl.style.display = "block";
+  if (stageRaysEl) stageRaysEl.style.display = "none";
+  if (typeof window.__bilgorekAdminRefresh === "function") {
+    window.__bilgorekAdminRefresh();
+  }
+}
+
+function closeAdminView() {
+  if (viewAdminEl) viewAdminEl.style.display = "none";
+  if (appRootEl) appRootEl.style.display = "";
+  if (stageRaysEl) stageRaysEl.style.display = "";
+  // Admin paneldə edilən dəyişikliklər (yeni/silinmiş sual, kateqoriya və s.)
+  // oyun tərəfində dərhal görünsün deyə keş yenidən yüklənir.
+  refreshCategoriesCache().then(() => renderCategories());
+  renderLeaderboard();
+  showScreen("home");
+}
+
+/* ======================= ADMİN PANELİ PIN QORUMASI ======================= */
+const adminPinOverlayEl = document.getElementById("admin-pin-overlay");
+const adminPinInputEl = document.getElementById("admin-pin-input");
+const adminPinErrorEl = document.getElementById("admin-pin-error");
+
+function showAdminPinPrompt() {
+  if (!adminPinOverlayEl) return;
+  adminPinErrorEl.textContent = "";
+  adminPinInputEl.value = "";
+  adminPinOverlayEl.style.display = "flex";
+  setTimeout(() => adminPinInputEl.focus(), 50);
+}
+function hideAdminPinPrompt() {
+  if (adminPinOverlayEl) adminPinOverlayEl.style.display = "none";
+}
+async function submitAdminPin() {
+  const val = adminPinInputEl.value;
+  let ok = false;
+  try { ok = await BilGorekDB.checkAdminPin(val); } catch (e) { ok = false; }
+  if (ok) {
+    hideAdminPinPrompt();
+    openAdminView();
+  } else {
+    adminPinErrorEl.textContent = "Yanlış parol.";
+    adminPinInputEl.value = "";
+    adminPinInputEl.focus();
+  }
+}
+if (adminPinInputEl) {
+  document.getElementById("admin-pin-submit").addEventListener("click", submitAdminPin);
+  document.getElementById("admin-pin-cancel").addEventListener("click", hideAdminPinPrompt);
+  adminPinInputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAdminPin(); });
+}
+
+const btnAdminOpenEl = document.getElementById("btn-admin-open");
+if (btnAdminOpenEl) btnAdminOpenEl.addEventListener("click", () => { soundClick(); showAdminPinPrompt(); });
+const btnAdminToGameEl = document.getElementById("btn-admin-to-game");
+if (btnAdminToGameEl) btnAdminToGameEl.addEventListener("click", closeAdminView);
+
+/* ======================= KOMANDA YARIŞI (BİL BAKALIM) ======================= */
+const teamEl = {
+  setupBack: document.getElementById("btn-team-setup-back"),
+  inputsList: document.getElementById("team-inputs-list"),
+  addBtn: document.getElementById("btn-team-add"),
+  categorySelect: document.getElementById("team-category-select"),
+  startBtn: document.getElementById("btn-team-start"),
+  turnName: document.getElementById("team-turn-name"),
+  turnStatusStrip: document.getElementById("team-status-strip"),
+  turnGoBtn: document.getElementById("btn-team-turn-go"),
+  quitBtn: document.getElementById("btn-team-quit"),
+  gamePlayerName: document.getElementById("team-game-player-name"),
+  timerPill: document.getElementById("team-timer-pill"),
+  statusStrip2: document.getElementById("team-status-strip-2"),
+  qCategoryIcon: document.getElementById("team-q-category-icon"),
+  questionText: document.getElementById("team-question-text"),
+  optionsGrid: document.getElementById("team-options-grid"),
+  explanationBox: document.getElementById("team-explanation-box"),
+  resultWinnerLine: document.getElementById("team-result-winner-line"),
+  resultList: document.getElementById("team-result-list"),
+  playAgainBtn: document.getElementById("btn-team-play-again"),
+  resultHomeBtn: document.getElementById("btn-team-result-home"),
+  btnTeamMode: document.getElementById("btn-team-mode")
+};
+
+let teamState = null;
+let teamTimerInterval = null;
+
+function makeTeamInputRow(idx) {
+  const row = document.createElement("div");
+  row.className = "team-input-row";
+  row.innerHTML = `
+    <input type="text" maxlength="18" placeholder="Komanda ${idx}" class="team-name-input">
+    <button type="button" class="team-remove-btn" title="Sil">✕</button>
+  `;
+  row.querySelector(".team-remove-btn").addEventListener("click", () => {
+    if (teamEl.inputsList.children.length <= 2) {
+      showToast("Ən azı 2 komanda olmalıdır.");
+      return;
+    }
+    row.remove();
+  });
+  return row;
+}
+
+function renderTeamInputs(count) {
+  teamEl.inputsList.innerHTML = "";
+  for (let i = 1; i <= count; i++) {
+    teamEl.inputsList.appendChild(makeTeamInputRow(i));
+  }
+}
+
+async function openTeamSetup() {
+  soundClick();
+  renderTeamInputs(2);
+  const cats = categoriesCache.length ? categoriesCache : await refreshCategoriesCache();
+  teamEl.categorySelect.innerHTML = `<option value="mixed">🎲 Qarışıq (bütün kateqoriyalar)</option>` +
+    cats.map(c => `<option value="${escapeHtml(c.key)}">${c.icon} ${escapeHtml(c.name)}</option>`).join("");
+  showScreen("team-setup");
+}
+
+if (teamEl.btnTeamMode) teamEl.btnTeamMode.addEventListener("click", openTeamSetup);
+if (teamEl.setupBack) teamEl.setupBack.addEventListener("click", () => { soundClick(); showScreen("home"); });
+if (teamEl.addBtn) teamEl.addBtn.addEventListener("click", () => {
+  soundClick();
+  if (teamEl.inputsList.children.length >= 8) {
+    showToast("Maksimum 8 komanda ola bilər.");
+    return;
+  }
+  teamEl.inputsList.appendChild(makeTeamInputRow(teamEl.inputsList.children.length + 1));
+});
+
+if (teamEl.startBtn) teamEl.startBtn.addEventListener("click", async () => {
+  soundClick();
+  const inputs = Array.from(teamEl.inputsList.querySelectorAll(".team-name-input"));
+  const names = inputs.map((inp, i) => inp.value.trim() || `Komanda ${i + 1}`);
+  if (names.length < 2) { showToast("Ən azı 2 komanda lazımdır."); return; }
+  const categoryKey = teamEl.categorySelect.value || "mixed";
+  await startTeamGame(names, categoryKey);
+});
+
+async function startTeamGame(names, categoryKey) {
+  const catsByKey = categoriesByKeyCache;
+  const gameParams = await BilGorekDB.getGameParams().catch(() => FALLBACK_GAME_PARAMS);
+
+  let rows;
+  let roundCategoryName;
+  if (categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+    roundCategoryName = "Qarışıq";
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(categoryKey);
+    roundCategoryName = (catsByKey[categoryKey] && catsByKey[categoryKey].name) || categoryKey;
+  }
+
+  if (!rows || rows.length === 0) {
+    showToast("Bu kateqoriyada hazırda aktiv sual yoxdur.");
+    return;
+  }
+
+  const pool = rows.map(r => BilGorekDB.rowToGameQuestion(r, catsByKey));
+
+  teamState = {
+    teams: names.map(n => ({ name: n, alive: true })),
+    categoryKey: categoryKey,
+    categoryName: roundCategoryName,
+    pool: shuffle(pool),
+    poolIndex: 0,
+    currentTeamIdx: null,
+    currentQuestion: null,
+    eliminationOrder: [],
+    gameParams: gameParams,
+    answered: false
+  };
+
+  goToNextTeamTurn();
+}
+
+function teamNextQuestion() {
+  if (teamState.poolIndex >= teamState.pool.length) {
+    teamState.pool = shuffle(teamState.pool);
+    teamState.poolIndex = 0;
+  }
+  const q = teamState.pool[teamState.poolIndex];
+  teamState.poolIndex += 1;
+  return q;
+}
+
+function aliveTeams() { return teamState.teams.filter(t => t.alive); }
+
+function renderTeamStatusStrip(container) {
+  container.innerHTML = "";
+  teamState.teams.forEach((t, i) => {
+    const chip = document.createElement("span");
+    let cls = "team-chip";
+    if (!t.alive) cls += " eliminated";
+    else if (i === teamState.currentTeamIdx) cls += " current";
+    else cls += " active";
+    chip.className = cls;
+    chip.textContent = t.name;
+    container.appendChild(chip);
+  });
+}
+
+function goToNextTeamTurn() {
+  const alive = aliveTeams();
+  if (alive.length <= 1) {
+    endTeamGame(alive[0] || null);
+    return;
+  }
+  let idx = teamState.currentTeamIdx;
+  do {
+    idx = (idx === null || idx === undefined) ? 0 : (idx + 1) % teamState.teams.length;
+  } while (!teamState.teams[idx].alive);
+  teamState.currentTeamIdx = idx;
+
+  teamEl.turnName.textContent = teamState.teams[idx].name;
+  renderTeamStatusStrip(teamEl.turnStatusStrip);
+  showScreen("team-turn");
+}
+
+if (teamEl.turnGoBtn) teamEl.turnGoBtn.addEventListener("click", () => {
+  soundClick();
+  renderTeamQuestion();
+});
+
+function renderTeamQuestion() {
+  teamState.answered = false;
+  const q = teamNextQuestion();
+  teamState.currentQuestion = q;
+
+  const team = teamState.teams[teamState.currentTeamIdx];
+  teamEl.gamePlayerName.textContent = team.name;
+  teamEl.qCategoryIcon.textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  teamEl.questionText.textContent = q.q;
+  renderTeamStatusStrip(teamEl.statusStrip2);
+
+  if (teamEl.explanationBox) { teamEl.explanationBox.style.display = "none"; teamEl.explanationBox.textContent = ""; }
+
+  const letters = ["A", "B", "C", "D"];
+  const shuffledOptions = shuffle(q.options.map((text, i) => ({ text, isCorrect: i === q.correct })));
+
+  teamEl.optionsGrid.innerHTML = "";
+  shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.dataset.correct = opt.isCorrect ? "true" : "false";
+    btn.innerHTML = `<span class="opt-letter"><span>${letters[i]}</span></span><span>${escapeHtml(opt.text)}</span>`;
+    btn.addEventListener("click", () => handleTeamAnswer(btn, opt.isCorrect));
+    teamEl.optionsGrid.appendChild(btn);
+  });
+
+  showScreen("team-game");
+  startTeamTimer();
+}
+
+function startTeamTimer() {
+  clearInterval(teamTimerInterval);
+  const timePerQuestion = teamState.gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion;
+  let remaining = timePerQuestion;
+  teamEl.timerPill.textContent = remaining;
+  teamEl.timerPill.classList.remove("urgent");
+
+  teamTimerInterval = setInterval(() => {
+    remaining -= 1;
+    teamEl.timerPill.textContent = Math.max(0, remaining);
+    if (remaining <= 5) teamEl.timerPill.classList.add("urgent");
+    if (remaining <= 0) {
+      clearInterval(teamTimerInterval);
+      if (!teamState.answered) handleTeamTimeout();
+    }
+  }, 1000);
+}
+
+function handleTeamTimeout() {
+  if (teamState.answered) return;
+  teamState.answered = true;
+  soundTimeout();
+  revealTeamCorrect();
+  eliminateCurrentTeam();
+}
+
+function handleTeamAnswer(btn, isCorrect) {
+  if (teamState.answered) return;
+  teamState.answered = true;
+  clearInterval(teamTimerInterval);
+  revealTeamCorrect();
+
+  if (isCorrect) {
+    soundCorrect();
+    advanceTeamAfterDelay();
+  } else {
+    soundWrong();
+    btn.classList.add("wrong");
+    eliminateCurrentTeam();
+  }
+}
+
+function revealTeamCorrect() {
+  const buttons = Array.from(teamEl.optionsGrid.children);
+  buttons.forEach(b => {
+    b.classList.add("disabled");
+    if (b.dataset.correct === "true") b.classList.add("correct");
+  });
+  const q = teamState.currentQuestion;
+  if (q.explanation && teamEl.explanationBox) {
+    teamEl.explanationBox.textContent = "💬 " + q.explanation;
+    teamEl.explanationBox.style.display = "block";
+  }
+}
+
+function eliminateCurrentTeam() {
+  const team = teamState.teams[teamState.currentTeamIdx];
+  team.alive = false;
+  teamState.eliminationOrder.push(team.name);
+  showToast(`${team.name} yarışdan çıxdı! ❌`);
+  setTimeout(() => { goToNextTeamTurn(); }, 1800);
+}
+
+function advanceTeamAfterDelay() {
+  const q = teamState.currentQuestion;
+  const delay = (q.explanation) ? 2600 : 1500;
+  setTimeout(() => { goToNextTeamTurn(); }, delay);
+}
+
+function endTeamGame(winnerTeam) {
+  clearInterval(teamTimerInterval);
+  teamEl.resultWinnerLine.textContent = winnerTeam ? `🏆 Qalib: ${winnerTeam.name}` : "Yarış bitdi";
+  const ranking = [];
+  if (winnerTeam) ranking.push(winnerTeam.name);
+  for (let i = teamState.eliminationOrder.length - 1; i >= 0; i--) ranking.push(teamState.eliminationOrder[i]);
+
+  teamEl.resultList.innerHTML = "";
+  ranking.forEach((name, i) => {
+    const row = document.createElement("div");
+    row.className = "team-result-row" + (i === 0 ? " winner" : "");
+    row.innerHTML = `<div class="team-result-rank">${i + 1}</div><div class="team-result-name">${escapeHtml(name)}</div>`;
+    teamEl.resultList.appendChild(row);
+  });
+
+  soundFanfare(true);
+  showScreen("team-result");
+}
+
+if (teamEl.quitBtn) teamEl.quitBtn.addEventListener("click", () => {
+  soundClick();
+  clearInterval(teamTimerInterval);
+  showScreen("home");
+});
+
+if (teamEl.playAgainBtn) teamEl.playAgainBtn.addEventListener("click", () => {
+  soundClick();
+  const names = teamState.teams.map(t => t.name);
+  startTeamGame(names, teamState.categoryKey);
+});
+if (teamEl.resultHomeBtn) teamEl.resultHomeBtn.addEventListener("click", () => { soundClick(); showScreen("home"); });
+
+/* ======================= CANLI YARIŞ (HƏR KƏS ÖZ TELEFONU İLƏ) ======================= */
+let liveState = null;
+let liveTimerInterval = null;
+
+function renderLiveTeamChips(container, teams) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!teams || teams.length === 0) {
+    container.innerHTML = `<span class="team-chip">Hələ heç kim qoşulmayıb...</span>`;
+    return;
+  }
+  teams.forEach(t => {
+    const chip = document.createElement("span");
+    chip.className = "team-chip active";
+    chip.textContent = `${t.name} · ${t.score || 0}`;
+    container.appendChild(chip);
+  });
+}
+
+function liveTeamsUpdated(teams) {
+  liveState.teams = teams.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  renderLiveTeamChips(document.getElementById("live-lobby-teams"), liveState.teams);
+  renderLiveTeamChips(document.getElementById("live-waiting-scoreboard"), liveState.teams);
+  renderLiveTeamChips(document.getElementById("live-host-scoreboard"), liveState.teams);
+  const hostAnswerCountEl = document.getElementById("live-host-answer-count");
+  if (hostAnswerCountEl && screens["live-host-control"].classList.contains("active")) {
+    // xal siyahısı yenilənəndə komanda sayı da dəyişə bilər — sadəcə saxlayır
+  }
+}
+
+const btnLiveModeEl = document.getElementById("btn-live-mode");
+if (btnLiveModeEl) btnLiveModeEl.addEventListener("click", () => {
+  soundClick();
+  if (BilGorekDB.getBackendName && BilGorekDB.getBackendName() !== "firestore") {
+    showToast("Canlı yarış üçün bu telefon serverə (Firebase) qoşulu olmalıdır. Admin paneldən qoşula bilərsiniz.");
+    return;
+  }
+  showScreen("live-entry");
+});
+document.getElementById("btn-live-entry-back").addEventListener("click", () => { soundClick(); showScreen("home"); });
+document.getElementById("btn-live-host-setup-back").addEventListener("click", () => { soundClick(); showScreen("live-entry"); });
+document.getElementById("btn-live-join-back").addEventListener("click", () => { soundClick(); showScreen("live-entry"); });
+
+document.getElementById("btn-live-host").addEventListener("click", async () => {
+  soundClick();
+  const cats = categoriesCache.length ? categoriesCache : await refreshCategoriesCache();
+  const sel = document.getElementById("live-host-category-select");
+  sel.innerHTML = `<option value="mixed">🎲 Qarışıq (bütün kateqoriyalar)</option>` +
+    cats.map(c => `<option value="${escapeHtml(c.key)}">${c.icon} ${escapeHtml(c.name)}</option>`).join("");
+  showScreen("live-host-setup");
+});
+
+document.getElementById("btn-live-host-create").addEventListener("click", async () => {
+  soundClick();
+  const categoryKey = document.getElementById("live-host-category-select").value || "mixed";
+  const catsByKey = categoriesByKeyCache;
+  const gameParams = await BilGorekDB.getGameParams().catch(() => FALLBACK_GAME_PARAMS);
+
+  let rows, roundCategoryName;
+  if (categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+    roundCategoryName = "Qarışıq";
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(categoryKey);
+    roundCategoryName = (catsByKey[categoryKey] && catsByKey[categoryKey].name) || categoryKey;
+  }
+  if (!rows || rows.length === 0) { showToast("Bu kateqoriyada hazırda aktiv sual yoxdur."); return; }
+
+  const pool = rows.map(r => BilGorekDB.rowToGameQuestion(r, catsByKey));
+  const questionsPerRound = gameParams.questionsPerRound || FALLBACK_GAME_PARAMS.questionsPerRound;
+  const chosen = shuffle(pool).slice(0, Math.min(questionsPerRound, pool.length));
+  const questionIds = chosen.map(q => q.id);
+
+  let code;
+  try {
+    code = await BilGorekDB.createLiveRoom({
+      categoryKey: categoryKey, categoryName: roundCategoryName, questionIds: questionIds,
+      timePerQuestion: gameParams.timePerQuestion || FALLBACK_GAME_PARAMS.timePerQuestion
+    });
+  } catch (e) {
+    showToast("Otaq yaradıla bilmədi: " + (e && e.message ? e.message : e));
+    return;
+  }
+
+  const questionsById = {};
+  chosen.forEach(q => { questionsById[q.id] = q; });
+
+  liveState = {
+    role: "host", code: code, teamId: null,
+    categoryKey: categoryKey, categoryName: roundCategoryName,
+    questionIds: questionIds, questionsById: questionsById,
+    teams: [], room: null, currentIndex: -1, renderedIndex: -1,
+    gameParams: gameParams,
+    unsubRoom: null, unsubTeams: null, unsubAnswers: null
+  };
+
+  enterLiveLobby();
+});
+
+document.getElementById("btn-live-join-open").addEventListener("click", () => {
+  soundClick();
+  document.getElementById("live-join-code").value = "";
+  document.getElementById("live-join-team-name").value = "";
+  document.getElementById("live-join-error").textContent = "";
+  showScreen("live-join");
+});
+
+document.getElementById("btn-live-join-submit").addEventListener("click", async () => {
+  soundClick();
+  const errBox = document.getElementById("live-join-error");
+  errBox.textContent = "";
+  const code = document.getElementById("live-join-code").value.trim();
+  const teamName = document.getElementById("live-join-team-name").value.trim();
+  if (!/^[0-9]{4}$/.test(code)) { errBox.textContent = "Otaq kodu 4 rəqəmdən ibarət olmalıdır."; return; }
+  if (!teamName) { errBox.textContent = "Komandanın adını yaz."; return; }
+
+  let joinResult;
+  try {
+    joinResult = await BilGorekDB.joinLiveRoom(code, teamName);
+  } catch (e) {
+    errBox.textContent = (e && e.message) ? e.message : "Qoşulmaq mümkün olmadı.";
+    return;
+  }
+
+  const room = joinResult.room;
+  await refreshCategoriesCache();
+  const byKey = categoriesByKeyCache;
+
+  let rows;
+  if (room.categoryKey === "mixed") {
+    rows = await BilGorekDB.getAllActiveQuestions();
+  } else {
+    rows = await BilGorekDB.getActiveQuestionsByCategory(room.categoryKey);
+  }
+  const questionsById = {};
+  rows.forEach(r => {
+    const q = BilGorekDB.rowToGameQuestion(r, byKey);
+    questionsById[q.id] = q;
+  });
+
+  liveState = {
+    role: "guest", code: code, teamId: joinResult.teamId,
+    categoryKey: room.categoryKey, categoryName: room.categoryName,
+    questionIds: room.questionIds || [], questionsById: questionsById,
+    teams: [], room: room, currentIndex: -1, renderedIndex: -1,
+    gameParams: { timePerQuestion: room.timePerQuestion || 20 },
+    unsubRoom: null, unsubTeams: null, unsubAnswers: null
+  };
+
+  enterLiveLobby();
+});
+
+function enterLiveLobby() {
+  document.getElementById("live-lobby-code").textContent = liveState.code;
+  const startBtn = document.getElementById("btn-live-lobby-start");
+  const waitMsg = document.getElementById("live-lobby-wait-msg");
+  const hint = document.getElementById("live-lobby-hint");
+  if (liveState.role === "host") {
+    startBtn.style.display = "";
+    waitMsg.style.display = "none";
+    hint.textContent = "Bu kodu digər komandalara söylə — onlar \"Otağa qoşul\"dan daxil etsin.";
+  } else {
+    startBtn.style.display = "none";
+    waitMsg.style.display = "";
+    hint.textContent = "Aparıcı bu kodla otaq yaradıb — indi digər komandaları gözləyirsiniz.";
+  }
+
+  if (liveState.unsubTeams) liveState.unsubTeams();
+  liveState.unsubTeams = BilGorekDB.subscribeLiveTeams(liveState.code, liveTeamsUpdated);
+
+  if (liveState.unsubRoom) liveState.unsubRoom();
+  liveState.unsubRoom = BilGorekDB.subscribeLiveRoom(liveState.code, (room) => {
+    if (!room) return;
+    liveState.room = room;
+    if (room.status === "playing" && liveState.role === "guest") {
+      if (liveState.renderedIndex !== room.currentIndex) {
+        liveState.renderedIndex = room.currentIndex;
+        enterLiveQuestionForCurrentIndex();
+      }
+    } else if (room.status === "finished") {
+      enterLiveResult();
+    }
+  });
+
+  showScreen("live-lobby");
+}
+
+document.getElementById("btn-live-lobby-start").addEventListener("click", async () => {
+  soundClick();
+  if (!liveState.teams || liveState.teams.length < 1) { showToast("Ən azı 1 komanda qoşulmalıdır."); return; }
+  try {
+    await BilGorekDB.startLiveRoomQuestion(liveState.code, 0);
+  } catch (e) { showToast("Başlamaq mümkün olmadı."); return; }
+  enterLiveHostControlForCurrentIndex(0);
+});
+
+document.getElementById("btn-live-lobby-leave").addEventListener("click", () => { soundClick(); leaveLiveRoom(); });
+document.getElementById("btn-live-result-home").addEventListener("click", () => { soundClick(); leaveLiveRoom(); });
+
+function leaveLiveRoom() {
+  if (liveState) {
+    if (liveState.unsubRoom) liveState.unsubRoom();
+    if (liveState.unsubTeams) liveState.unsubTeams();
+    if (liveState.unsubAnswers) liveState.unsubAnswers();
+  }
+  clearInterval(liveTimerInterval);
+  liveState = null;
+  showScreen("home");
+}
+
+function enterLiveQuestionForCurrentIndex() {
+  const idx = liveState.room.currentIndex;
+  const qid = liveState.questionIds[idx];
+  const q = liveState.questionsById[qid];
+  if (!q) { showToast("Sual tapılmadı — internet bağlantısını yoxlayın."); return; }
+  liveState.currentQuestion = q;
+  liveState.currentIndex = idx;
+  liveState.answered = false;
+
+  document.getElementById("live-q-counter").textContent = `Sual ${idx + 1}/${liveState.questionIds.length}`;
+  document.getElementById("live-q-category-icon").textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  document.getElementById("live-question-text").textContent = q.q;
+
+  const letters = ["A", "B", "C", "D"];
+  const shuffledOptions = shuffle(q.options.map((text, i) => ({ text, isCorrect: i === q.correct })));
+  const grid = document.getElementById("live-options-grid");
+  grid.innerHTML = "";
+  shuffledOptions.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.dataset.correct = opt.isCorrect ? "true" : "false";
+    btn.innerHTML = `<span class="opt-letter"><span>${letters[i]}</span></span><span>${escapeHtml(opt.text)}</span>`;
+    btn.addEventListener("click", () => handleLiveAnswer(btn, opt.isCorrect));
+    grid.appendChild(btn);
+  });
+
+  showScreen("live-question");
+  startLiveTimer();
+}
+
+function startLiveTimer() {
+  clearInterval(liveTimerInterval);
+  const timePerQuestion = (liveState.room && liveState.room.timePerQuestion) || 20;
+  let remaining = timePerQuestion;
+  const pill = document.getElementById("live-timer-pill");
+  pill.textContent = remaining;
+  pill.classList.remove("urgent");
+  liveTimerInterval = setInterval(() => {
+    remaining -= 1;
+    pill.textContent = Math.max(0, remaining);
+    if (remaining <= 5) pill.classList.add("urgent");
+    if (remaining <= 0) {
+      clearInterval(liveTimerInterval);
+      if (!liveState.answered) handleLiveAnswer(null, false);
+    }
+  }, 1000);
+}
+
+async function handleLiveAnswer(btn, isCorrect) {
+  if (liveState.answered) return;
+  liveState.answered = true;
+  clearInterval(liveTimerInterval);
+
+  const grid = document.getElementById("live-options-grid");
+  const buttons = Array.from(grid.children);
+  buttons.forEach(b => {
+    b.classList.add("disabled");
+    if (b.dataset.correct === "true") b.classList.add("correct");
+  });
+  if (btn && !isCorrect) btn.classList.add("wrong");
+  if (isCorrect) soundCorrect(); else soundWrong();
+
+  const optionIndex = btn ? buttons.indexOf(btn) : -1;
+  try {
+    await BilGorekDB.submitLiveAnswer(liveState.code, liveState.teamId, liveState.currentIndex, optionIndex, !!isCorrect);
+  } catch (e) { /* səssiz keç — cavab ötürülmədi, amma lokal olaraq göstərilib */ }
+
+  setTimeout(() => enterLiveWaiting(isCorrect), 1200);
+}
+
+function enterLiveWaiting(wasCorrect) {
+  document.getElementById("live-waiting-icon").textContent = wasCorrect ? "✅" : "❌";
+  document.getElementById("live-waiting-label").textContent = wasCorrect ? "Düzgün! Digərlərini gözləyirik..." : "Səhv oldu. Digərlərini gözləyirik...";
+  renderLiveTeamChips(document.getElementById("live-waiting-scoreboard"), liveState.teams);
+  showScreen("live-waiting");
+}
+
+function enterLiveHostControlForCurrentIndex(idx) {
+  const qid = liveState.questionIds[idx];
+  const q = liveState.questionsById[qid];
+  liveState.currentIndex = idx;
+  liveState.currentQuestion = q;
+
+  document.getElementById("live-host-q-counter").textContent = `Sual ${idx + 1}/${liveState.questionIds.length}`;
+  document.getElementById("live-host-q-category-icon").textContent = `${q.icon || "❓"} ${q.categoryName || ""}`;
+  document.getElementById("live-host-question-text").textContent = q.q;
+  document.getElementById("live-host-answer-count").textContent = `0/${liveState.teams.length} komanda cavab verdi`;
+
+  if (liveState.unsubAnswers) liveState.unsubAnswers();
+  liveState.unsubAnswers = BilGorekDB.subscribeLiveAnswers(liveState.code, idx, (answers) => {
+    document.getElementById("live-host-answer-count").textContent = `${answers.length}/${liveState.teams.length} komanda cavab verdi`;
+  });
+
+  showScreen("live-host-control");
+}
+
+document.getElementById("btn-live-host-next").addEventListener("click", async () => {
+  soundClick();
+  const nextBtn = document.getElementById("btn-live-host-next");
+  nextBtn.disabled = true;
+  try {
+    await BilGorekDB.scoreLiveRoomQuestion(liveState.code, liveState.currentIndex);
+  } catch (e) { /* göz ardı et */ }
+
+  const nextIdx = liveState.currentIndex + 1;
+  if (nextIdx >= liveState.questionIds.length) {
+    try { await BilGorekDB.finishLiveRoom(liveState.code); } catch (e) {}
+    enterLiveResult();
+  } else {
+    try {
+      await BilGorekDB.startLiveRoomQuestion(liveState.code, nextIdx);
+    } catch (e) { showToast("Xəta baş verdi."); nextBtn.disabled = false; return; }
+    enterLiveHostControlForCurrentIndex(nextIdx);
+  }
+  nextBtn.disabled = false;
+});
+
+function enterLiveResult() {
+  clearInterval(liveTimerInterval);
+  const sorted = (liveState.teams || []).slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+  const list = document.getElementById("live-result-list");
+  list.innerHTML = "";
+  sorted.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "team-result-row" + (i === 0 ? " winner" : "");
+    row.innerHTML = `<div class="team-result-rank">${i + 1}</div><div class="team-result-name">${escapeHtml(t.name)} · ${t.score || 0} xal</div>`;
+    list.appendChild(row);
+  });
+  soundFanfare(true);
+  showScreen("live-result");
+}
+
+/* ======================= İLKİN YÜKLƏMƏ ======================= */
+updateSoundIcon();
+initName();
+showScreen("home");
+BilGorekDB.ready()
+  .then(() => {
+    renderCategories();
+    if (BilGorekDB.getBackendName && BilGorekDB.getBackendName() === "localstorage") {
+      // IndexedDB bu cihazda/brauzerdə əlçatan olmadığı üçün proqram
+      // avtomatik olaraq ehtiyat yaddaş rejiminə keçib — proqram normal
+      // işləyir, sadəcə bu barədə istifadəçini məlumatlandırırıq.
+      setTimeout(() => showToast("Qeyd: bu cihazda ehtiyat yaddaş rejimi istifadə olunur."), 900);
+    }
+  })
+  .catch((e) => {
+    console.error("DB açılmadı:", e);
+    const msg = (e && e.message) ? String(e.message) : String(e);
+    el.categoryGrid.innerHTML = `<div class="loading-msg">Məlumat bazası açılmadı: ${escapeHtml(msg)}<br>Brauzeri yeniləyin.</div>`;
+  });
+</script>
+<script src="admin.bundle.js"></script>
+<script>
+// QEYD: Servis işçisi (service worker) artıq qeydiyyata alınmır — inkişaf
+// zamanı köhnə versiyaların keşdə "ilişib qalması" problemi yaratdığı üçün
+// çıxarıldı. Əvvəllər qeydiyyata alınmış köhnə servis işçisini təmizləmək
+// üçün onu bir dəfə "boş" bir versiya ilə əvəz edib özünü ləğv etməsini
+// təmin edirik (bax: sw.js).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((reg) => reg.unregister());
+    }).catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
