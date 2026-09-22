@@ -265,24 +265,37 @@ document.getElementById("cf-save").addEventListener("click", async () => {
 async function deleteCategoryFlow(cat, questionCount) {
   const overlay = document.getElementById("category-delete-modal-overlay");
   const msgEl = document.getElementById("cd-message");
+  const modeField = document.getElementById("cd-mode-field");
+  const modeReassign = document.getElementById("cd-mode-reassign");
+  const modeCascade = document.getElementById("cd-mode-cascade");
   const reassignField = document.getElementById("cd-reassign-field");
   const reassignSelect = document.getElementById("cd-reassign-select");
+  const hasOtherCategory = categoriesCache.filter(c => c.key !== cat.key).length > 0;
+
+  function syncReassignVisibility() {
+    reassignField.style.display = (questionCount > 0 && modeReassign.checked) ? "flex" : "none";
+  }
 
   if (questionCount > 0) {
-    if (categoriesCache.length <= 1) {
-      showToast("Bu kateqoriyada " + questionCount + " sual var və başqa kateqoriya olmadığı üçün silinə bilməz. Əvvəlcə yeni kateqoriya yaradın.", true);
-      return;
-    }
-    msgEl.textContent = `"${cat.name}" kateqoriyasında ${questionCount} sual var. Silmədən əvvəl bu sualları başqa kateqoriyaya köçürmək lazımdır.`;
-    reassignField.style.display = "flex";
+    msgEl.textContent = `"${cat.name}" kateqoriyasında ${questionCount} sual var. Necə silmək istəyirsən?`;
+    modeField.style.display = "block";
     reassignSelect.innerHTML = "";
     categoriesCache.filter(c => c.key !== cat.key).forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.key; opt.textContent = c.icon + " " + c.name;
       reassignSelect.appendChild(opt);
     });
+    if (hasOtherCategory) {
+      modeReassign.checked = true;
+      modeReassign.disabled = false;
+    } else {
+      modeCascade.checked = true;
+      modeReassign.disabled = true;
+    }
+    syncReassignVisibility();
   } else {
     msgEl.textContent = `"${cat.name}" kateqoriyasını silmək istədiyinizə əminsiniz?`;
+    modeField.style.display = "none";
     reassignField.style.display = "none";
   }
 
@@ -293,13 +306,24 @@ async function deleteCategoryFlow(cat, questionCount) {
       overlay.style.display = "none";
       confirmBtn.removeEventListener("click", onConfirm);
       cancelBtn.removeEventListener("click", onCancel);
+      modeReassign.removeEventListener("change", syncReassignVisibility);
+      modeCascade.removeEventListener("change", syncReassignVisibility);
     }
     const confirmBtn = document.getElementById("cd-confirm");
     const cancelBtn = document.getElementById("cd-cancel");
+    modeReassign.addEventListener("change", syncReassignVisibility);
+    modeCascade.addEventListener("change", syncReassignVisibility);
     async function onConfirm() {
       try {
-        const reassignTo = questionCount > 0 ? reassignSelect.value : undefined;
-        await BilGorekDB.deleteCategory(cat.key, reassignTo);
+        if (questionCount > 0 && modeCascade.checked) {
+          const allQ = await BilGorekDB.getAllQuestions();
+          const ids = allQ.filter(q => q.kateqoriya === cat.key).map(q => q.id);
+          if (ids.length) await BilGorekDB.deleteQuestions(ids);
+          await BilGorekDB.deleteCategory(cat.key);
+        } else {
+          const reassignTo = questionCount > 0 ? reassignSelect.value : undefined;
+          await BilGorekDB.deleteCategory(cat.key, reassignTo);
+        }
         showToast("Kateqoriya silindi 🗑️");
         cleanup();
         await renderCategoriesTab();
